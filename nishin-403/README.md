@@ -1,61 +1,109 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<h1 align="center"><a href="https://github.com/OblakoEcarlate/403-fil_rouge-nishin" target="_blank">Nishin</a></h1>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
 
-## About Laravel
+## A propos de Nishin
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Nishin est une application basée sur le jeu "Genshin Impact" permettant 
+de calculer les dégâts d'un personnage DPS au sein d'une équipe de 3 autres
+Support. Chaque personnage peut avoir des artéfacts qui donnent des statistiques
+supplémentaires et peut donner un bonus (si c'est un support).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Learning Laravel
+## Architecture
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Backend** : [Laravel](https://laravel.com/).
+- **Base de données** : [MongoDB](https://www.mongodb.com/).
+- **Conteneurisation** : [Docker](https://www.docker.com/).
+- **Partie mobile** : [React Native](https://reactnative.dev/).
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Prérequis et Installation
 
-## Laravel Sponsors
+- **Docker** : [Suivre ce lien si besoin](https://docs.docker.com/desktop/setup/install/linux/).
+- **GIT**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-### Premium Partners
+### Clonage et configuration du projet
+```
+git clone git@github.com:OblakoEcarlate/403-fil_rouge-nishin.git
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+cd /nishin-403
 
-## Contributing
+cp .env.example .env
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+docker compose run --rm app php artisan key:generate
+```
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+## Configuration Docker
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2 volumes :
+- mongo-data : données de la base de données
+- composer-cache : pour les dépendances de Composer
 
-## License
+Services :
+1. app (Laravel)
+    - Image : Build à partir du Dockerfile
+    - Ports : 8000, à configurer dans le Dockerfile
+    - Volumes : Code source et cache Composer
+    - Dépendances : Doit démarrer après le service MongoDB
+    - Healthcheck : Vérification de la "santé", c'est-à-dire si PHP fonctionne correctement
+2. mongo (MongoDB)
+    - Image : mongo version 6
+    - Ports : 27017
+    - Volumes : mongo-data pour la persistance
+    - Authentification : Active la connexion avec les variables d'environnement
+    - Healthcheck : Vérification de la "santé", c'est-à-dire si MongoDB répond aux requêtes
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+## Variables d'environnement
+
+Créez un fichier .env à la racine : 
+
+### Configuration BDD
+- DB_CONNECTION=mongodb
+- DB_HOST=mongo
+- DB_PORT=27017
+- DB_DATABASE=your_database_name
+- DB_USERNAME=your_mongo_username
+- DB_PASSWORD=your_mongo_password
+
+### Configuration APP
+- APP_ENV=local
+- APP_DEBUG=true
+- APP_KEY=your_generated_app_key
+
+
+
+## Commandes de base
+
+Démarrer les conteneurs
+```
+docker compose up
+```
+
+Arrêter les conteneurs
+```
+docker compose down
+```
+
+
+Voir les logs de l'application
+```
+docker compose logs app
+```
+
+
+Voir les logs de MongoDB
+```
+docker compose logs mongo
+```
+
+
+Exécuter une commande artisan dans le conteneur
+```
+docker compose exec app php artisan [command]
+```
