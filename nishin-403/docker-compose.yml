@@ -1,0 +1,51 @@
+volumes:
+    mongo-data:
+    composer-cache:
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: laravel-app
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+            - composer-cache:/tmp
+        environment:
+            - DB_CONNECTION=${DB_CONNECTION}
+            - DB_HOST=${DB_HOST}
+            - DB_PORT=${DB_PORT}
+            - DB_DATABASE=${DB_DATABASE}
+            - DB_USERNAME=${DB_USERNAME}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - APP_ENV=${APP_ENV}
+            - APP_DEBUG=${APP_DEBUG}
+            - APP_KEY=${APP_KEY}
+        depends_on:
+            - mongo
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "php", "-v"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+    mongo:
+        image: mongo:6
+        container_name: mongo-db
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME}
+            - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+            - MONGO_INITDB_DATABASE=${DB_DATABASE}
+        volumes:
+            - mongo-data:/data/db
+        ports:
+            - "27017:27017"
+        restart: unless-stopped
+        command: mongod --auth
+        healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test -u ${DB_USERNAME:-root} -p ${DB_PASSWORD:-root} --authenticationDatabase admin --quiet
+            interval: 10s
+            timeout: 10s
+            retries: 5

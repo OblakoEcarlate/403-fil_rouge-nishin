@@ -1,0 +1,14 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: mongo-test
+    #        restart: unless-stopped     (permet de toujours le restart quand il se stop TODO: à verif)
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpass
+      - MONGO_INITDB_DATABASE=laravel-test
+    ports:
+      - "27018:27017"
+    tmpfs:
+      - /data/db
+#      - ./docker/mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
