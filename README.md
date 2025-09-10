@@ -28,6 +28,10 @@ supplémentaires et peut donner un bonus (si c'est un support).
 ```
 git clone git@github.com:OblakoEcarlate/403-fil_rouge-nishin.git
 
+git checkout develop
+
+git pull
+
 cd /nishin-403
 
 cp .env.example .env
