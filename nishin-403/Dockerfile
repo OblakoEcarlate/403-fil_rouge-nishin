@@ -29,6 +29,12 @@ RUN mkdir -p /var/www/html
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/html
 
+# Install Laravel Pint in local environment
+RUN if [ "$APP_ENV" = "local" ]; then \
+    composer global require laravel/pint --dev && \
+    ln -s /tmp/vendor/bin/pint /usr/local/bin/pint; \
+fi
+
 # Set working directory
 WORKDIR /var/www/html
 
