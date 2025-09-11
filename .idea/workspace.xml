@@ -4,52 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d038d2b2-7587-4d4a-afe0-b5b8a7ace368" name="Changes" comment="21-build/ajout de pint dans le dockerfile">
-      <change beforePath="$PROJECT_DIR$/nishin-403/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/Controller.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/app/Models/User.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/app/Providers/AppServiceProvider.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/artisan" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/bootstrap/app.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/bootstrap/providers.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/composer.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/composer.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/app.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/auth.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/cache.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/cors.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/database.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/filesystems.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/logging.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/mail.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/queue.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/services.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/session.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/database/factories/UserFactory.php" beforeDir="false" />
+    <list default="true" id="d038d2b2-7587-4d4a-afe0-b5b8a7ace368" name="Changes" comment="build/refonte de la structure de laravel + modif de dockerfile + ajout du .env.example">
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/nishin-403/routes/api.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/bootstrap/app.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/bootstrap/app.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/composer.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/composer.lock" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/composer.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/config/cors.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/config/cors.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/config/database.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/config/database.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/database/migrations/0001_01_01_000000_create_users_table.php" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/database/migrations/0001_01_01_000001_create_cache_table.php" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/database/migrations/0001_01_01_000002_create_jobs_table.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/database/seeders/DatabaseSeeder.php" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/docker-compose.test.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/docker-compose.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/phpunit.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/pint.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/public/favicon.ico" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/public/index.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/public/robots.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/resources/css/app.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/resources/js/app.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/resources/js/bootstrap.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/resources/views/welcome.blade.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/routes/console.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/routes/web.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/tests/Feature/ExampleTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/tests/TestCase.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/tests/Unit/ExampleTest.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/vite.config.js" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +88,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1757515260931</updated>
-      <workItem from="1757515262187" duration="7078000" />
+      <workItem from="1757515262187" duration="7564000" />
     </task>
     <task id="LOCAL-00001" summary="21-build/ajout de pint dans le dockerfile">
       <option name="closed" value="true" />
@@ -128,7 +98,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757515779769</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="build/refonte de la structure de laravel + modif de dockerfile + ajout du .env.example">
+      <option name="closed" value="true" />
+      <created>1757581058620</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1757581058620</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -136,6 +114,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="21-build/ajout de pint dans le dockerfile" />
-    <option name="LAST_COMMIT_MESSAGE" value="21-build/ajout de pint dans le dockerfile" />
+    <MESSAGE value="build/refonte de la structure de laravel + modif de dockerfile + ajout du .env.example" />
+    <option name="LAST_COMMIT_MESSAGE" value="build/refonte de la structure de laravel + modif de dockerfile + ajout du .env.example" />
   </component>
 </project>

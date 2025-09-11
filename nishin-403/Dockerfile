@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
+# TODO: à vérif cette ligne expérimentale
+sudo apt update && sudo apt install php-mongodb
+
 # Install PHP extensions
 RUN docker-php-ext-install -j$(nproc) zip pdo_mysql mbstring exif pcntl gd
 
