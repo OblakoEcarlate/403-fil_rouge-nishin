@@ -43,18 +43,6 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
-        'mongodb' => [
-            'driver' => 'mongodb',
-            'host' => env('DB_HOST', 'mongo'),
-            'port' => env('DB_PORT', 27017),
-            'database' => env('DB_DATABASE', 'nishin-403'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', 'root'),
-            'options' => [
-                'authSource' => 'admin',
-            ],
-        ],
-
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -73,6 +61,18 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
+        ],
+
+        'mongodb' => [
+            'driver' => 'mongodb',
+            'host' => env('DB_HOST', 'mongo'),
+            'port' => env('DB_PORT', 27017),
+            'database' => env('DB_DATABASE', 'nishin-403'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', 'root'),
+            'options' => [
+                'authSource' => 'admin',
+            ],
         ],
 
         'mariadb' => [

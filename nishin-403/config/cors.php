@@ -23,7 +23,6 @@ return [
 
     // Origines explicites (utilise ceci si supports_credentials = true)
     'allowed_origins' => [
-        // Expo / dev local (ajuste selon tes ports/outils)
         'http://localhost:19006',
         'http://127.0.0.1:19006',
         'http://localhost:5173',
@@ -40,16 +39,11 @@ return [
         '#^http://172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+(?::\d+)?$#',
     ],
 
-    // Autoriser tous les headers ou liste précise: ['Content-Type', 'Authorization', ...]
     'allowed_headers' => ['*'],
 
-    // Headers exposés au client (si tu en as besoin: ['Authorization', 'X-Total-Count', ...])
     'exposed_headers' => [],
 
-    // Durée de mise en cache des pré-requêtes (en secondes)
     'max_age' => 0,
 
-    // Si tu dois envoyer/recevoir des cookies/Authorization cross-site, passe à true
-    // et NE mets pas '*' dans allowed_origins (mets des domaines exacts).
     'supports_credentials' => false,
 ];
