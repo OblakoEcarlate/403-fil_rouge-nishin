@@ -25,3 +25,6 @@ Route::delete('/removeartifact', [ArtifactsController::class, 'removeArtifact'])
 
 //addArtifact(Request $request, string $characterName, Artifact $artifact)
 Route::post('/addartifact', [ArtifactsController::class, 'addArtifact']);
+
+//calculateATKArtifact
+Route::get('/calculateartifact', [ArtifactsController::class, 'calculateATKArtifact']);

@@ -133,4 +133,43 @@ class ArtifactsController extends Controller
         ];
     }
 
+    public function calculateATKArtifact(Request $request)
+    {
+        $character = Character::where('_id', $request->character_id)->first();
+
+        if (!$character) {
+            throw new \Exception("Personnage non trouvé");
+        }
+
+        $artifacts = $character->artifact;
+        $hasATKPercentArtifact = false;
+        $totalArtifactBonus = 0;
+
+        $slots = ['slot3', 'slot4', 'slot5'];
+
+        foreach ($slots as $slot) {
+            if (!empty($artifacts[$slot]) && isset($artifacts[$slot]['main_stat']) && $artifacts[$slot]['main_stat'] === "ATK%") {
+                $hasATKPercentArtifact = true;
+                break;
+            }
+        }
+
+        if ($hasATKPercentArtifact) {
+            $simulateController = new SimulationController();
+            $baseDMG = $simulateController->simulateBasicDamageForDPS($request);
+
+            foreach ($slots as $slot) {
+                if (!empty($artifacts[$slot]) && isset($artifacts[$slot]['main_stat']) && $artifacts[$slot]['main_stat'] === "ATK%") {
+                    $bonusATK = $baseDMG * ($artifacts[$slot]['stat_value'] / 100);
+                    $totalArtifactBonus += $bonusATK;
+
+                    // stock le bonus dans l'objet
+                    $artifacts[$slot]['calculated_bonus'] = $bonusATK;
+                }
+            }
+        }
+
+        return number_format($totalArtifactBonus);
+    }
+
 }
