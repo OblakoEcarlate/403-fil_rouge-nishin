@@ -14,9 +14,10 @@ Route::get('/test', function () {
     ]);
 });
 
-Route::get('/testdmgdpsbase', [SimulationController::class, 'simulateBasicDamageForDPS']);
+//simulateBasicDamageForDPS
+Route::get('/simulateBasicDamageForDPS', [SimulationController::class, 'simulateBasicDamageForDPS']);
 
-Route::get('/testarte', [SimulationController::class, 'simulateDamageWithArtifact']);
+Route::get('/simulateDamageWithArtifact', [SimulationController::class, 'simulateDamageWithArtifact']);
 
 //getArtifactsStats -> charactername
 Route::get('/getartefact', [ArtifactsController::class, 'getArtifactsStats']);
@@ -32,6 +33,9 @@ Route::get('/calculateartifact', [SimulationController::class, 'calculateATKArti
 
 //simulateDamageWithArtifact
 Route::get('/simulateDamageWithArtifact', [SimulationController::class, 'simulateDamageWithArtifact']);
+
+//getSlot1CharacterOfTeam
+Route::get('/getSlot1CharacterOfTeam', [SimulationController::class, 'getSlot1CharacterOfTeam']);
 
 
 
