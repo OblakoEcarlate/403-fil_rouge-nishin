@@ -40,13 +40,4 @@ class Character extends Model
         'elemental_bonus' => 'integer'
     ];
 
-//    protected $attributes = [
-//        'artifact' => [
-//            'slot1' => [],
-//            'slot2' => [],
-//            'slot3' => [],
-//            'slot4' => [],
-//            'slot5' => []
-//        ]
-//    ];
 }

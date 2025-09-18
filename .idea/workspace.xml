@@ -4,13 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d038d2b2-7587-4d4a-afe0-b5b8a7ace368" name="Changes" comment="update de fichier">
-      <change beforePath="$PROJECT_DIR$/.idea/403-fil_rouge-nishin.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/403-fil_rouge-nishin.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/laravel-idea.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/laravel-idea.xml" afterDir="false" />
+    <list default="true" id="d038d2b2-7587-4d4a-afe0-b5b8a7ace368" name="Changes" comment="feat/ ajout de l'artefact 2">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/config/database.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/config/database.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/app/Models/Character.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/app/Models/Character.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/app/Models/User.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/app/Models/User.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/database/factories/UserFactory.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/database/factories/UserFactory.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/database/seeders/DatabaseSeeder.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/database/seeders/DatabaseSeeder.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nishin-403/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/routes/api.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/routes/api.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -201,7 +200,7 @@
       <option name="presentableId" value="Default" />
       <updated>1757515260931</updated>
       <workItem from="1757515262187" duration="16667000" />
-      <workItem from="1757919077656" duration="28444000" />
+      <workItem from="1757919077656" duration="57884000" />
     </task>
     <task id="LOCAL-00001" summary="21-build/ajout de pint dans le dockerfile">
       <option name="closed" value="true" />
@@ -227,7 +226,31 @@
       <option name="project" value="LOCAL" />
       <updated>1757581096858</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="feat/ ajout des Artefacts (crud)">
+      <option name="closed" value="true" />
+      <created>1758027355695</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1758027355695</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat/ ajout du calcul des bonus atq% des artefacts">
+      <option name="closed" value="true" />
+      <created>1758031197997</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1758031197997</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat/ ajout de l'artefact 2">
+      <option name="closed" value="true" />
+      <created>1758033459667</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1758033459667</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -237,6 +260,9 @@
     <MESSAGE value="21-build/ajout de pint dans le dockerfile" />
     <MESSAGE value="build/refonte de la structure de laravel + modif de dockerfile + ajout du .env.example" />
     <MESSAGE value="update de fichier" />
-    <option name="LAST_COMMIT_MESSAGE" value="update de fichier" />
+    <MESSAGE value="feat/ ajout des Artefacts (crud)" />
+    <MESSAGE value="feat/ ajout du calcul des bonus atq% des artefacts" />
+    <MESSAGE value="feat/ ajout de l'artefact 2" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat/ ajout de l'artefact 2" />
   </component>
 </project>
