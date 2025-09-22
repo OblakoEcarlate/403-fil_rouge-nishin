@@ -4,9 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d038d2b2-7587-4d4a-afe0-b5b8a7ace368" name="Changes" comment="feat/ ajout d'une team lié à un user">
+    <list default="true" id="d038d2b2-7587-4d4a-afe0-b5b8a7ace368" name="Changes" comment="feat/ ajout du controller de simulation;&#10;ajout du calcul artefact;&#10;ajout calcul degat de base;&#10;recuperation du slot1;">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/ArtifactsController.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/ArtifactsController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/SimulationController.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/SimulationController.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/TeamController.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/app/Http/Controllers/TeamController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/database/seeders/CharacterSeeder.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/database/seeders/CharacterSeeder.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nishin-403/routes/api.php" beforeDir="false" afterPath="$PROJECT_DIR$/nishin-403/routes/api.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -196,7 +200,7 @@
       <option name="presentableId" value="Default" />
       <updated>1757515260931</updated>
       <workItem from="1757515262187" duration="16667000" />
-      <workItem from="1757919077656" duration="60507000" />
+      <workItem from="1757919077656" duration="94638000" />
     </task>
     <task id="LOCAL-00001" summary="21-build/ajout de pint dans le dockerfile">
       <option name="closed" value="true" />
@@ -254,7 +258,23 @@
       <option name="project" value="LOCAL" />
       <updated>1758189304147</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="feat/ ajout de la vérification si un perso est deja dans l'équipe; &#10;TRI">
+      <option name="closed" value="true" />
+      <created>1758204898019</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1758204898019</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat/ ajout du controller de simulation;&#10;ajout du calcul artefact;&#10;ajout calcul degat de base;&#10;recuperation du slot1;">
+      <option name="closed" value="true" />
+      <created>1758220597075</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1758220597075</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -268,6 +288,8 @@
     <MESSAGE value="feat/ ajout du calcul des bonus atq% des artefacts" />
     <MESSAGE value="feat/ ajout de l'artefact 2" />
     <MESSAGE value="feat/ ajout d'une team lié à un user" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat/ ajout d'une team lié à un user" />
+    <MESSAGE value="feat/ ajout de la vérification si un perso est deja dans l'équipe; &#10;TRI" />
+    <MESSAGE value="feat/ ajout du controller de simulation;&#10;ajout du calcul artefact;&#10;ajout calcul degat de base;&#10;recuperation du slot1;" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat/ ajout du controller de simulation;&#10;ajout du calcul artefact;&#10;ajout calcul degat de base;&#10;recuperation du slot1;" />
   </component>
 </project>

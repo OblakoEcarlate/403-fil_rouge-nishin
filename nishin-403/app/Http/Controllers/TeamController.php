@@ -121,6 +121,6 @@ class TeamController extends Controller
     {
         $team = Team::where('_id', $request->team_id)->first();
 
-        echo $team;
+        return $team;
     }
 }

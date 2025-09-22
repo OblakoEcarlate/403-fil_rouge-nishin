@@ -132,7 +132,4 @@ class ArtifactsController extends Controller
             ]
         ];
     }
-
-
-
 }

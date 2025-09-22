@@ -271,7 +271,7 @@ class CharacterSeeder extends Seeder
             'type' => "SUPPORT",
             'buff' => [
                 'name' => '+ATQ% en fonction des PV de Furina',
-                'type' => 'atq_buff',
+                'type' => 'atk_buff',
                 'value' => 0.01,
                 'is_percentage' => true,
             ],

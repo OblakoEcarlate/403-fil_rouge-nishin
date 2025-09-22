@@ -6,38 +6,33 @@ use App\Http\Controllers\SimulationController;
 use App\Http\Controllers\ArtifactsController;
 use App\Http\Controllers\TeamController;
 
-Route::get('/test', function () {
-    return response()->json([
-        'message' => 'API Laravel fonctionne!',
-        'status' => 'success',
-        'timestamp' => now()
-    ]);
-});
 
-//simulateBasicDamageForDPS
-Route::get('/simulateBasicDamageForDPS', [SimulationController::class, 'simulateBasicDamageForDPS']);
+//getArtifactsStats
+Route::get('/getArtefactStat', [ArtifactsController::class, 'getArtifactsStats']);
 
-Route::get('/simulateDamageWithArtifact', [SimulationController::class, 'simulateDamageWithArtifact']);
+//removeArtifact
+Route::delete('/removeArtifact', [ArtifactsController::class, 'removeArtifact']);
 
-//getArtifactsStats -> charactername
-Route::get('/getartefact', [ArtifactsController::class, 'getArtifactsStats']);
+//addArtifact
+Route::post('/addArtifact', [ArtifactsController::class, 'addArtifact']);
 
-//removeArtifact -> avec characterName et slot
-Route::delete('/removeartifact', [ArtifactsController::class, 'removeArtifact']);
 
-//addArtifact(Request $request, string $characterName, Artifact $artifact)
-Route::post('/addartifact', [ArtifactsController::class, 'addArtifact']);
 
-//calculateATKArtifact
-Route::get('/calculateartifact', [SimulationController::class, 'calculateATKArtifact']);
-
+//**** SIMULATION
 //simulateDamageWithArtifact
 Route::get('/simulateDamageWithArtifact', [SimulationController::class, 'simulateDamageWithArtifact']);
 
-//getSlot1CharacterOfTeam
+//simulateDamageWithBuffForDPS
+Route::get('/simulateDamageWithBuffForDPS', [SimulationController::class, 'simulateDamageWithBuffForDPS']);
+
+//simulateDamageForDPS
+Route::get('/simulateDamageForDPS', [SimulationController::class, 'simulateDamageForDPS']);
+
+
+
+//**** EQUIPE
+//getSlot1CharacterOfTeam - PRIVATE
 Route::get('/getSlot1CharacterOfTeam', [SimulationController::class, 'getSlot1CharacterOfTeam']);
-
-
 
 //addCharacterToSlot
 Route::post('/addCharacterToSlot', [TeamController::class, 'addCharacterToSlot']);
