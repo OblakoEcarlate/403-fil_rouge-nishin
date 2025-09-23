@@ -8,7 +8,7 @@ use App\Http\Controllers\TeamController;
 
 
 //getArtifactsStats
-Route::get('/getArtefactStat', [ArtifactsController::class, 'getArtifactsStats']);
+Route::get('/getArtifactStat', [ArtifactsController::class, 'getArtifactsStats']);
 
 //removeArtifact
 Route::delete('/removeArtifact', [ArtifactsController::class, 'removeArtifact']);
@@ -19,6 +19,9 @@ Route::post('/addArtifact', [ArtifactsController::class, 'addArtifact']);
 
 
 //**** SIMULATION
+//simulateBasicDamageForDPS
+Route::get('/simulateBasicDamageForDPS', [SimulationController::class, 'simulateBasicDamageForDPS']);
+
 //simulateDamageWithArtifact
 Route::get('/simulateDamageWithArtifact', [SimulationController::class, 'simulateDamageWithArtifact']);
 

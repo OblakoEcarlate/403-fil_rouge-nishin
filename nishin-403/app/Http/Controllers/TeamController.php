@@ -67,7 +67,6 @@ class TeamController extends Controller
         $character->save();
 
         return response()->json([
-            'message' => 'Personnage assigné au slot' . $slot . 'avec succès !',
             'team' => $team->fresh(['slots']),
             'character' => $character->fresh()
         ]);
@@ -107,7 +106,6 @@ class TeamController extends Controller
 
 
         return response()->json([
-            'message' => 'Personnage retiré avec succès',
             'team' => $team->fresh(),
             'character' => $character->fresh()
         ]);

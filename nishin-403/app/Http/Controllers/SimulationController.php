@@ -182,8 +182,6 @@ class SimulationController extends Controller
                         'character_name' => $character['name'],
                         'slot' => $slot
                     ];
-                } else {
-                    echo $character['name'] . " ($slot) est " . $character['type'] . " (pas de buff support)";
                 }
             } catch (\Exception $e) {
                 echo "Erreur $slot: " . $e->getMessage();
@@ -191,7 +189,6 @@ class SimulationController extends Controller
         }
 
         return response()->json([
-            'success' => true,
             'buffs' => $buffs
         ]);
     }
@@ -228,7 +225,6 @@ class SimulationController extends Controller
                             }
                         }
                         $buffSucrose += $totalEM;
-                        echo "buff de sucrose : " . $buffSucrose;
                     }
 
                     $buffEMToDPS = $buff['value'];
@@ -244,7 +240,6 @@ class SimulationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Buffs appliqués au DPS',
             'buffs' => [$buffEMToDPS, $buffATKToDPS, $buffSucrose, $buffElementalToDPS]
         ]);
     }
@@ -322,13 +317,11 @@ class SimulationController extends Controller
                 return $character;
             } else {
                 return response()->json([
-                    'success' => false,
                     'message' => "Tu n'es pas un DPS dans le slot 1"
                 ]);
             }
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
                 'message' => $e->getMessage()
             ], 404);
         }
