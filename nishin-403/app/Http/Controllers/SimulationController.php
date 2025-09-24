@@ -169,6 +169,7 @@ class SimulationController extends Controller
     private function getBuff(Request $request)
     {
         $slots = ['slot2', 'slot3', 'slot4'];
+        $buffs = [];
 
         foreach ($slots as $slot) {
             try {
