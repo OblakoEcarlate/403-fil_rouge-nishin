@@ -9,11 +9,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libssl-dev \
     pkg-config \
-    sudo \
     && rm -rf /var/lib/apt/lists/*
-
-# TODO: à vérif cette ligne expérimentale
-sudo apt update && sudo apt install php-mongodb
 
 # Install PHP extensions
 RUN docker-php-ext-install -j$(nproc) zip pdo_mysql mbstring exif pcntl gd
@@ -25,18 +21,16 @@ RUN pecl install mongodb \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Create working directory
-RUN mkdir -p /var/www/html
+# Create working directory and set permissions
+RUN mkdir -p /var/www/html \
+    && chown -R www-data:www-data /var/www \
+    && chmod -R 775 /var/www
 
-# Change ownership to allow both www-data and current user
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 775 /var/www/html
-
-# Install Laravel Pint in local environment
-RUN if [ "$APP_ENV" = "local" ]; then \
-    composer global require laravel/pint --dev && \
-    ln -s /tmp/vendor/bin/pint /usr/local/bin/pint; \
-fi
+# Create storage directory structure with correct permissions
+RUN mkdir -p /var/www/html/storage/framework/{cache,sessions,views} \
+    && mkdir -p /var/www/html/storage/logs \
+    && chown -R www-data:www-data /var/www/html/storage \
+    && chmod -R 775 /var/www/html/storage
 
 # Set working directory
 WORKDIR /var/www/html
