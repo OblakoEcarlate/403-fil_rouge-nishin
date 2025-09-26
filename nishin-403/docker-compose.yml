@@ -9,7 +9,7 @@ services:
             dockerfile: Dockerfile
         ports:
             - "8000:8000"
-        container_name: laravel-app
+        container_name: api
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
@@ -27,7 +27,7 @@ services:
         command: >
             sh -c "
             php artisan optimize:clear &&
-            php artisan serve
+            php artisan serve --host=0.0.0.0 --port=8000
             "
         depends_on:
             - mongo
