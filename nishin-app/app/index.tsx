@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, Modal, ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, FlatList, Pressable, Modal, ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
@@ -38,33 +38,7 @@ const fetchCharacters = async () => {
     }
 };
 
-// const addCharacterToSlot = async () => {
-//     const response = await fetch(`${API_BASE_URL}/addCharacterToSlot?team_id=68cbb498fd7c1749b8048502`, {
-//                 method: 'POST',
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                     'Authorization': API_KEY
-//                     },
-//            body: {
-//                'character_id': 1,
-//                'slot': 'slot1'
-//                });
-//     }
 
-function SlotCard({data, slot, onSlotPress}) {
-  const handlePress = () => {
-      if (onSlotPress) {
-        onSlotPress(slot, data);
-      }
-    };
-  return (
-    <TouchableOpacity style={styles.slotCard} onPress={handlePress}>
-      <Text style={styles.plusBig}>+</Text>
-      <Text style={styles.slot}>{data?.name ?? ''}</Text>
-      <Text style={styles.role}>{data?.type}</Text>
-    </TouchableOpacity>
-  );
-}
 
 export default function NishinScreen() {
     const [teamData, setTeamData] = useState(null);
@@ -73,6 +47,48 @@ export default function NishinScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [selectedSlotData, setSelectedSlotData] = useState(null);
+
+    const characterImages = {
+        'ayaka': require('../assets/personnages/ayaka.webp'),
+        'ayato': require('../assets/personnages/ayato.webp'),
+        'bennett': require('../assets/personnages/bennett.webp'),
+        'citlali': require('../assets/personnages/citlali.webp'),
+        'diona': require('../assets/personnages/diona.webp'),
+        'furina': require('../assets/personnages/furina.webp'),
+        'ganyu': require('../assets/personnages/ganyu.webp'),
+        'kazuha': require('../assets/personnages/kazuha.webp'),
+        'neuvillette': require('../assets/personnages/neuvillette.webp'),
+        'sucrose': require('../assets/personnages/sucrose.webp'),
+        'xiangling': require('../assets/personnages/xiangling.webp'),
+        'yanfei': require('../assets/personnages/yanfei.webp'),
+        'yoimiya': require('../assets/personnages/yoimiya.webp'),
+        'plus': require('../assets/icone/plus.png')
+    };
+
+const addCharacterToSlot = async (characterId, slot) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/addCharacterToSlot?team_id=68dba59e213bfb469101ae92`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': API_KEY
+            },
+            body: JSON.stringify({
+                'character_id': characterId,
+                'slot': slot
+            })
+        });
+
+        const result = await response.json();
+        console.log('Character ajouté:', result);
+
+        const updatedTeam = await fetchTeam();
+        setTeamData(updatedTeam);
+        closeModal();
+    } catch (error) {
+        console.error('Erreur lors de l\'ajout:', error);
+    }
+}
 
         useEffect(() => {
             const loadTeamData = async () => {
@@ -119,26 +135,39 @@ export default function NishinScreen() {
 
         <Text style={styles.title}>Nishin</Text>
 
+        <View style={{ marginHorizontal: 15}}>
         <Text style={styles.sectionLabel}>Équipe</Text>
         <View style={styles.teamRow}>
-            <SlotCard data={teamData?.slots?.slot1} slot='slot1' onSlotPress={handleSlotPress}/>
-            <SlotCard data={teamData?.slots?.slot2} slot='slot2' onSlotPress={handleSlotPress}/>
-            <SlotCard data={teamData?.slots?.slot3} slot='slot3' onSlotPress={handleSlotPress}/>
-            <SlotCard data={teamData?.slots?.slot4} slot='slot4' onSlotPress={handleSlotPress}/>
+            <SlotCard data={teamData?.slots?.slot1} slot='slot1' onSlotPress={handleSlotPress} characterImages={characterImages}/>
+            <SlotCard data={teamData?.slots?.slot2} slot='slot2' onSlotPress={handleSlotPress} characterImages={characterImages}/>
+            <SlotCard data={teamData?.slots?.slot3} slot='slot3' onSlotPress={handleSlotPress} characterImages={characterImages}/>
+            <SlotCard data={teamData?.slots?.slot4} slot='slot4' onSlotPress={handleSlotPress} characterImages={characterImages}/>
         </View>
 
         <Modal style={styles.modalCharacters} animationType="slide" visible={modalVisible} onRequestClose={closeModal}>
             <View>
                 <Pressable onPress={closeModal}><Text>x</Text></Pressable>
-                <Text>je suis un texte dans une modal</Text>
+                <Text style={styles.titleModalCharacter}>Choisir un personnage</Text>
+                <View style={styles.containerModal}>
                 <FlatList
                     vertical
                     data={charactersData}
                     contentContainerStyle={styles.listContainer}
                     renderItem={({item, index}) => (
-                        <Text source={item} key={index}>{item.name}</Text>
+                        <View style={styles.containerImage}>
+                        <Pressable onPress={() => addCharacterToSlot(item.id, selectedSlot)}>
+                            <Image
+                                source={characterImages[item.name.toLowerCase()]}
+                                style={styles.characterImage}
+                                onError={(error) => console.log('Erreur chargement image:', error)}
+                            />
+                            <Text source={item} key={index}>{item.name}</Text>
+                        </Pressable>
+
+                        </View>
                     )}
                 />
+                </View>
             </View>
         </Modal>
 
@@ -163,6 +192,7 @@ export default function NishinScreen() {
 
 
         <View style={{ height: 40 }} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -187,6 +217,25 @@ function CircleWithText({ text }: { text: string }) {
     <View style={styles.circle}>
       <Text style={styles.circleText}>{text}</Text>
     </View>
+  );
+}
+
+function SlotCard({data, slot, onSlotPress, characterImages}) {
+  const handlePress = () => {
+      if (onSlotPress) {
+        onSlotPress(slot, data);
+      }
+    };
+  return (
+    <TouchableOpacity style={styles.slotCard} onPress={handlePress}>
+      <Image
+        source={characterImages[data?.name.toLowerCase()] || characterImages.plus}
+        style={styles.characterImageInSlot}
+        onError={(error) => console.log('Erreur chargement image:', error)}
+      />
+      <Text style={styles.slot}>{data?.name ?? ''}</Text>
+      <Text style={styles.role}>{data?.type}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -220,4 +269,11 @@ const styles = StyleSheet.create({
   reloadBtn: { alignSelf: 'center', marginTop: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#111', borderRadius: 8 },
   reloadText: { color: '#fff', fontWeight: '600' },
   chevron: { fontSize: 16 },
+  modalCharacters: { marginHorizontal: 20, marginVertical: 30},
+  characterImage: { height: 100, width: 100},
+  containerImage: { flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
+  containerModal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
+  listContainer: { marginHorizontal: 15, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'},
+  titleModalCharacter: { marginVertical: 30, fontSize: 26, fontWeight: '600', textAlign: 'center' },
+  characterImageInSlot: { height: 60, width: 60 }
 });
