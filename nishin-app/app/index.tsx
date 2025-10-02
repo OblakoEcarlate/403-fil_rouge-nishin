@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, FlatList, Pressable, Modal, ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
+import {Picker} from '@react-native-picker/picker';
 
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
 const API_KEY = Constants.expoConfig.extra.API_KEY;
@@ -24,7 +25,7 @@ const fetchTeam = async () => {
 
 const fetchCharacters = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/getAllCharacters`, {
+        const response = await fetch(`${API_BASE_URL}/getAllCharacters?team_id=68dba59e213bfb469101ae92`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -38,6 +39,23 @@ const fetchCharacters = async () => {
     }
 };
 
+const fetchArtifacts = async (characterId) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/getArtifactStat?character_id=${characterId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': API_KEY
+            }
+        });
+
+        const artifacts = await response.json();
+        return artifacts;
+    } catch (error) {
+        console.error('Erreur fetch des artefacts: ', error);
+        return [];
+    }
+}
 
 
 export default function NishinScreen() {
@@ -47,6 +65,11 @@ export default function NishinScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [selectedSlotData, setSelectedSlotData] = useState(null);
+    const [selectedSlotForArtifacts, setSelectedSlotForArtifacts] = useState(null);
+    const [artifactModalVisible, setArtifactModalVisible] = useState(false);
+    const [artifactsData, setArtifactsData] = useState(null);
+    const [selectedSlotForPicker, setSelectedSlotForPicker] = useState(null);
+    const [selectedStat, setSelectedStat] = useState('');
 
     const characterImages = {
         'ayaka': require('../assets/personnages/ayaka.webp'),
@@ -65,6 +88,14 @@ export default function NishinScreen() {
         'plus': require('../assets/icone/plus.png')
     };
 
+    const artifactImages = {
+        'slot1': require('../assets/artefact/fleur.webp'),
+        'slot2': require('../assets/artefact/plume.png'),
+        'slot3': require('../assets/artefact/sablier.webp'),
+        'slot4': require('../assets/artefact/coupe.png'),
+        'slot5': require('../assets/artefact/casque.png'),
+    };
+
 const addCharacterToSlot = async (characterId, slot) => {
     try {
         const response = await fetch(`${API_BASE_URL}/addCharacterToSlot?team_id=68dba59e213bfb469101ae92`, {
@@ -80,8 +111,6 @@ const addCharacterToSlot = async (characterId, slot) => {
         });
 
         const result = await response.json();
-        console.log('Character ajouté:', result);
-
         const updatedTeam = await fetchTeam();
         setTeamData(updatedTeam);
         closeModal();
@@ -89,6 +118,86 @@ const addCharacterToSlot = async (characterId, slot) => {
         console.error('Erreur lors de l\'ajout:', error);
     }
 }
+
+const addArtifact = async (characterId, artifactStat, slotArtifact) => {
+    try {
+        if (slotArtifact == "slot1") {
+            artifactStat = "HP";
+        } else if (slotArtifact == "slot2") {
+            artifactStat = "ATK";
+        }
+        const response = await fetch(`${API_BASE_URL}/addArtifact`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': API_KEY
+            },
+            body: JSON.stringify({
+                main_stat: artifactStat,
+                slot: slotArtifact,
+                character_id: characterId
+            })
+        });
+
+        const result = await response.json();
+        const updatedArtifact = await fetchArtifacts(characterId);
+
+        setArtifactModalVisible(false);
+        fetchAndShowArtifacts();
+        setArtifactsData(updatedArtifact);
+    } catch (error) {
+        console.error("Erreur:", error);
+    }
+};
+
+const removeArtifact = async (characterId, slotArtifact) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/removeArtifact`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': API_KEY
+            },
+            body: JSON.stringify({
+                slot: slotArtifact,
+                character_id: characterId
+            })
+        });
+
+        const result = await response.json();
+        const updatedArtifact = await fetchArtifacts(characterId);
+
+        setArtifactModalVisible(false);
+        fetchAndShowArtifacts();
+        setArtifactsData(updatedArtifact);
+    } catch (error) {
+        console.error("Erreur:", error);
+    }
+};
+
+const removeCharacter = async (characterId, slot) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/removeCharacterFromSlot`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': API_KEY
+            },
+            body: JSON.stringify({
+                slot: slot,
+                character_id: characterId,
+                team_id: '68dba59e213bfb469101ae92'
+            })
+        });
+
+        const result = await response.json();
+        const updatedTeam = await fetchTeam();
+
+        setTeamData(updatedTeam);
+    } catch (error) {
+        console.error("Erreur:", error);
+    }
+};
 
         useEffect(() => {
             const loadTeamData = async () => {
@@ -114,13 +223,13 @@ const addCharacterToSlot = async (characterId, slot) => {
         }, []);
 
     const handleSlotPress = (slot, slotData) => {
-        console.log(`Slot ${slot} cliqué:`, slotData);
         setSelectedSlot(slot);
         setSelectedSlotData(slotData);
         if (slotData == null) {
             setModalVisible(true);
         } else {
             setModalVisible(false);
+            fetchAndShowArtifacts(slotData.id, slot);
         }
       };
 
@@ -129,6 +238,28 @@ const addCharacterToSlot = async (characterId, slot) => {
         setSelectedSlot(null);
         setSelectedSlotData(null);
       };
+
+    const handleLongPress = (characterId, slot, teamData) => {
+        console.log('tu es dans lautre handlelongpress');
+        removeCharacter(characterId, slot, teamData);
+    };
+
+    const handleAddArtifact = (slotArtifact) => {
+        setSelectedSlotForPicker(slotArtifact);
+        setArtifactModalVisible(true);
+        setSelectedStat('');
+    };
+
+  const fetchAndShowArtifacts = async (characterId, slot) => {
+      try {
+          const artifacts = await fetchArtifacts(characterId);
+          setArtifactsData(artifacts);
+          setSelectedSlotForArtifacts(slot);
+      } catch (error) {
+          console.error('Erreur récupération artéfacts:', error);
+      }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView>
@@ -138,16 +269,16 @@ const addCharacterToSlot = async (characterId, slot) => {
         <View style={{ marginHorizontal: 15}}>
         <Text style={styles.sectionLabel}>Équipe</Text>
         <View style={styles.teamRow}>
-            <SlotCard data={teamData?.slots?.slot1} slot='slot1' onSlotPress={handleSlotPress} characterImages={characterImages}/>
-            <SlotCard data={teamData?.slots?.slot2} slot='slot2' onSlotPress={handleSlotPress} characterImages={characterImages}/>
-            <SlotCard data={teamData?.slots?.slot3} slot='slot3' onSlotPress={handleSlotPress} characterImages={characterImages}/>
-            <SlotCard data={teamData?.slots?.slot4} slot='slot4' onSlotPress={handleSlotPress} characterImages={characterImages}/>
+            <SlotCard data={teamData?.slots?.slot1} slot='slot1' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard data={teamData?.slots?.slot2} slot='slot2' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard data={teamData?.slots?.slot3} slot='slot3' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard data={teamData?.slots?.slot4} slot='slot4' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
         </View>
 
         <Modal style={styles.modalCharacters} animationType="slide" visible={modalVisible} onRequestClose={closeModal}>
             <View>
                 <Pressable onPress={closeModal}><Text>x</Text></Pressable>
-                <Text style={styles.titleModalCharacter}>Choisir un personnage</Text>
+                <Text style={styles.modalTitle}>Choisir un personnage</Text>
                 <View style={styles.containerModal}>
                 <FlatList
                     vertical
@@ -159,7 +290,6 @@ const addCharacterToSlot = async (characterId, slot) => {
                             <Image
                                 source={characterImages[item.name.toLowerCase()]}
                                 style={styles.characterImage}
-                                onError={(error) => console.log('Erreur chargement image:', error)}
                             />
                             <Text source={item} key={index}>{item.name}</Text>
                         </Pressable>
@@ -172,8 +302,102 @@ const addCharacterToSlot = async (characterId, slot) => {
         </Modal>
 
         <Accordion title="Artéfacts">
-          <Text style={styles.infoText}>Contenu à venir…</Text>
+          <View style={styles.artifactRow}>
+            {artifactsData && Object.entries(artifactsData).map(([slot, artifactData]) => (
+              <ArtifactCard
+                key={slot}
+                slot={slot}
+                artifactData={artifactData}
+                characterId={selectedSlotData?.id}
+                artifactImages={artifactImages}
+                onAddArtifact={handleAddArtifact}
+              />
+            ))}
+          </View>
         </Accordion>
+
+        <Modal
+            visible={artifactModalVisible}
+            animationType="slide"
+            onRequestClose={() => setArtifactModalVisible(false)}
+        >
+            <View style={styles.modalContainer}>
+                <Pressable
+                    style={styles.closeButton}
+                    onPress={() => setArtifactModalVisible(false)}
+                >
+                    <Text style={styles.closeText}>X</Text>
+                </Pressable>
+
+                <Text style={styles.modalTitle}>
+                    Ajouter un artéfact - Slot {selectedSlotForPicker?.replace('slot', '')}
+                </Text>
+
+                {selectedSlotForPicker === 'slot3' && (
+                    <Picker
+                        selectedValue={selectedStat}
+                        onValueChange={(itemValue) => setSelectedStat(itemValue)}
+                    >
+                        <Picker.Item label="PV%" value="HP%" />
+                        <Picker.Item label="ATQ%" value="ATK%" />
+                        <Picker.Item label="Maîtrise Élémentaire" value="EM" />
+                    </Picker>
+                )}
+
+                {selectedSlotForPicker === 'slot4' && (
+                    <Picker
+                        selectedValue={selectedStat}
+                        onValueChange={(itemValue) => setSelectedStat(itemValue)}
+                    >
+                        <Picker.Item label="PV%" value="HP%" />
+                        <Picker.Item label="ATQ%" value="ATK%" />
+                        <Picker.Item label="Maîtrise Élémentaire" value="EM" />
+                        <Picker.Item label="Bonus DGT Élémentaire" value="Elemental" />
+                    </Picker>
+                )}
+
+                {selectedSlotForPicker === 'slot5' && (
+                    <Picker
+                        selectedValue={selectedStat}
+                        onValueChange={(itemValue) => setSelectedStat(itemValue)}
+                    >
+                        <Picker.Item label="PV%" value="HP%" />
+                        <Picker.Item label="ATQ%" value="ATK%" />
+                        <Picker.Item label="Maîtrise Élémentaire" value="EM" />
+                    </Picker>
+                )}
+
+                {(selectedSlotForPicker === 'slot1' || selectedSlotForPicker === 'slot2') && (
+                    <Text style={styles.fixedStatText}>
+                        {selectedSlotForPicker === 'slot1' ? 'Stat fixe: HP' : 'Stat fixe: ATQ'}
+                    </Text>
+                )}
+
+                <View style={styles.modalButtons}>
+                    <Pressable
+                        style={[styles.button, styles.cancelButton]}
+                        onPress={() => setArtifactModalVisible(false)}
+                    >
+                        <Text style={{ color: '#d66', fontWeight: '600'}}>Annuler</Text>
+                    </Pressable>
+                    <Pressable
+                        style={[styles.button, styles.confirmButton]}
+                        onPress={() => addArtifact(selectedSlotData.id, selectedStat, selectedSlotForPicker)}
+                    >
+                        <Text style={{ color: '#fff', fontWeight: '600'}}>Ajouter</Text>
+                    </Pressable>
+                    <Pressable
+                        style={[styles.button, styles.deleteButton]}
+                        onPress={() => removeArtifact(selectedSlotData.id, selectedSlotForPicker)}
+                    >
+                        <Text style={{ color: '#fff', fontWeight: '600'}}>Supprimer</Text>
+                    </Pressable>
+                </View>
+            </View>
+        </Modal>
+
+
+
 
         <Accordion title="Réaction élémentaire" defaultOpen>
           <View style={styles.reactionBox}>
@@ -220,24 +444,68 @@ function CircleWithText({ text }: { text: string }) {
   );
 }
 
-function SlotCard({data, slot, onSlotPress, characterImages}) {
+function SlotCard({data, slot, onSlotPress, onLongPress, characterImages, teamData}) {
   const handlePress = () => {
       if (onSlotPress) {
         onSlotPress(slot, data);
       }
     };
+  const handleLong = () => {
+    if (onLongPress) {
+        onLongPress(data.id, slot, teamData);
+    }
+  }
   return (
-    <TouchableOpacity style={styles.slotCard} onPress={handlePress}>
+    <TouchableOpacity style={styles.slotCard} onPress={handlePress} onLongPress={handleLong}>
       <Image
         source={characterImages[data?.name.toLowerCase()] || characterImages.plus}
         style={styles.characterImageInSlot}
-        onError={(error) => console.log('Erreur chargement image:', error)}
       />
       <Text style={styles.slot}>{data?.name ?? ''}</Text>
       <Text style={styles.role}>{data?.type}</Text>
     </TouchableOpacity>
   );
 }
+
+function ArtifactCard({ slot, artifactData, artifactImages, onAddArtifact }) {
+    const artifactImage = artifactImages[slot] || require('../assets/icone/plus.png');
+
+    return (
+        <TouchableOpacity
+            style={styles.artifactCard}
+        >
+            <View style={styles.containerArtifactImage}>
+                <Pressable onPress={() => onAddArtifact(slot)}>
+                    {artifactData && Object.keys(artifactData).length > 0 ? (
+                        <>
+                            <Image
+                                source={artifactImage}
+                                style={styles.artifactImage}
+                            />
+                            <Text style={styles.artifactText}>
+                                {artifactData.stat_name ? artifactData.stat_name : artifactData.main_stat}
+                            </Text>
+                            <Text style={styles.artifactText}>
+                                {artifactData.stat_value}
+                            </Text>
+                        </>
+                    ) : (
+                        <>
+                            <Image
+                                source={require('../assets/icone/plus.png')}
+                                style={styles.artifactImage}
+                            />
+                            <Text style={styles.artifactText}>
+                                Slot {slot.replace('slot', '')}
+                            </Text>
+                        </>
+                    )}
+                </Pressable>
+            </View>
+        </TouchableOpacity>
+    );
+}
+
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
@@ -263,7 +531,7 @@ const styles = StyleSheet.create({
   circle: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center' },
   circleText: { fontSize: 18, fontWeight: '700' },
   muted: { marginTop: 8, color: '#666' },
-  damageBox: { borderWidth: 1, borderColor: '#d66', borderRadius: 8, padding: 12, marginTop: 8 },
+  damageBox: { borderWidth: 3, borderColor: '#d66', borderRadius: 8, padding: 12, marginTop: 8 },
   damageText: { color: '#333' },
   error: { color: '#b00020', marginTop: 8 },
   reloadBtn: { alignSelf: 'center', marginTop: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#111', borderRadius: 8 },
@@ -275,5 +543,16 @@ const styles = StyleSheet.create({
   containerModal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   listContainer: { marginHorizontal: 15, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'},
   titleModalCharacter: { marginVertical: 30, fontSize: 26, fontWeight: '600', textAlign: 'center' },
-  characterImageInSlot: { height: 60, width: 60 }
+  characterImageInSlot: { height: 60, width: 60 },
+  artifactRow: { flexDirection: 'row', gap: 12, marginTop: 2, alignItems: 'center', justifyContent: 'center'},
+  artifactImage: { height: 60, width: 60 },
+  artifactText: { textAlign: 'center' },
+  close: { fontSize: 30 },
+  modalContainer: { marginVertical: 50, marginHorizontal: 10 },
+  modalTitle: { textAlign: 'center', fontWeight: '600', fontSize: 20, marginVertical: 20},
+  fixedStatText: {textAlign: 'center', fontSize: 10 },
+  modalButtons: {flexDirection: 'row', gap: 20, marginVertical: 200, alignItems: 'center', justifyContent: 'center'},
+  cancelButton: { borderColor: '#d66', borderWidth: 2, borderRadius: 8, padding: 10, alignItems: 'center', justifyContent: 'center', width: 120 },
+  confirmButton: { backgroundColor: '#d66', borderRadius: 8, padding: 10, width: 120, alignItems: 'center', justifyContent: 'center'},
+  deleteButton: { backgroundColor: '#000', borderRadius: 8, padding: 10, width: 120, alignItems: 'center', justifyContent: 'center' }
 });
