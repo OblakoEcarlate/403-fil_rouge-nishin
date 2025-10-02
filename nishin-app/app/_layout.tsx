@@ -6,6 +6,7 @@ export default function RootLayout() {
     <Stack>
       <Stack.Screen style={styles.title} name="index" options={{ title: 'Nishin' }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="auth" options={{ headerShown: false }}/>
     </Stack>
   );
 }

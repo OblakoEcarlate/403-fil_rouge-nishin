@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, FlatList, Pressable, Modal, ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import {Picker} from '@react-native-picker/picker';
+import { router } from 'expo-router';
 
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
 const API_KEY = Constants.expoConfig.extra.API_KEY;
@@ -94,6 +95,10 @@ export default function NishinScreen() {
         'slot3': require('../assets/artefact/sablier.webp'),
         'slot4': require('../assets/artefact/coupe.png'),
         'slot5': require('../assets/artefact/casque.png'),
+    };
+
+    const navigateToAuth = () => {
+        router.replace('/auth');
     };
 
 const addCharacterToSlot = async (characterId, slot) => {
@@ -266,6 +271,7 @@ const removeCharacter = async (characterId, slot) => {
 
         <Text style={styles.title}>Nishin</Text>
 
+        <Pressable title="Test auth" onPress={navigateToAuth}><Text>POUR LA CONNEXION</Text></Pressable>
         <View style={{ marginHorizontal: 15}}>
         <Text style={styles.sectionLabel}>Équipe</Text>
         <View style={styles.teamRow}>
