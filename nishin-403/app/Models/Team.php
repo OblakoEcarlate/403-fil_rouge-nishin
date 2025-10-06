@@ -20,9 +20,14 @@ class Team extends Model
         'user_id'
     ];
 
-//    protected $casts = [
-//        'slots' => 'array'
-//    ];
+    protected $attributes = [
+        'slots' => [
+            'slot1' => null,
+            'slot2' => null,
+            'slot3' => null,
+            'slot4' => null
+        ]
+    ];
 
     public function character(): EmbedsMany
     {
