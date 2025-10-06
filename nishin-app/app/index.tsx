@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, FlatList, Pressable, Modal, ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, FlatList, Pressable, Modal, ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, AppState } from 'react-native';
 import Constants from 'expo-constants';
 import {Picker} from '@react-native-picker/picker';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
 const API_KEY = Constants.expoConfig.extra.API_KEY;
@@ -26,7 +27,7 @@ const fetchTeam = async () => {
 
 const fetchCharacters = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/getAllCharacters?team_id=68dba59e213bfb469101ae92`, {
+        const response = await fetch(`${API_BASE_URL}/getAllCharacters`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -71,6 +72,9 @@ export default function NishinScreen() {
     const [artifactsData, setArtifactsData] = useState(null);
     const [selectedSlotForPicker, setSelectedSlotForPicker] = useState(null);
     const [selectedStat, setSelectedStat] = useState('');
+    const [basicDamage, setBasicDamage] = useState(null);
+    const [artifactDamage, setArtifactDamage] = useState(null);
+    const [damage, setDamage] = useState(null);
 
     const characterImages = {
         'ayaka': require('../assets/personnages/ayaka.webp'),
@@ -203,6 +207,76 @@ const removeCharacter = async (characterId, slot) => {
         console.error("Erreur:", error);
     }
 };
+
+async function getBasicDamage() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/simulateBasicDamageForDPS?team_id=68dba59e213bfb469101ae92`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': API_KEY,
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    },
+                });
+
+            const basicDamage = await response.json();
+            return basicDamage;
+        } catch (error) {
+            console.error('Erreur fetch: ', error);
+        }
+    };
+
+
+async function getArtifactDamage() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/simulateDamageWithArtifact?team_id=68dba59e213bfb469101ae92`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': API_KEY,
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    },
+                });
+
+            const artifactDamage = await response.json();
+            return artifactDamage;
+        } catch (error) {
+            console.error('Erreur fetch: ', error);
+        }
+    };
+
+async function getDamage() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/simulateDamageForDPS?team_id=68dba59e213bfb469101ae92`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': API_KEY,
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    },
+                });
+
+            const damage = await response.json();
+            return damage;
+        } catch (error) {
+            console.error('Erreur fetch: ', error);
+        }
+    };
+
+// BASIC DAMAGE -------------------------------------------------------------------------------
+    const refreshDamage = useCallback(async () => {
+        const value = await getBasicDamage();
+        setBasicDamage(value);
+
+        const artifactValue = await getArtifactDamage();
+        setArtifactDamage(artifactValue);
+
+        const damage = await getDamage();
+        setDamage(damage);
+      }, []);
 
         useEffect(() => {
             const loadTeamData = async () => {
@@ -415,9 +489,31 @@ const removeCharacter = async (characterId, slot) => {
         </Accordion>
 
         <Text style={styles.sectionLabel}>Dégâts estimés avec Nom</Text>
-        <View style={styles.damageBox}>
-          <Text style={styles.damageText}>Compose ton équipe pour connaître les dégâts de ton DPS</Text>
-        </View>
+
+        {basicDamage == null ? (
+          <View style={styles.damageBox}>
+            <Text style={styles.damageText}>
+              Compose ton équipe pour connaître les dégâts de ton DPS
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.damageBox}>
+            <Text>Dégâts compétence : {basicDamage}</Text>
+            <Text>Dégâts avec artéfacts : {artifactDamage}</Text>
+            <Text>Dégâts de compétence estimés : {damage}</Text>
+          </View>
+        )}
+
+
+
+
+         <TouchableOpacity
+                style={{ marginTop: 16, backgroundColor: '#222', padding: 12, borderRadius: 8 }}
+                onPress={() => refreshDamage()}
+         >
+             <Text style={{ color: 'white' }}>Mettre à jour !</Text>
+         </TouchableOpacity>
+
 
 
 
