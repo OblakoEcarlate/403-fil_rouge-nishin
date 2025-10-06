@@ -27,14 +27,9 @@ class TeamController extends Controller
     public function addCharacterToSlot(Request $request)
     {
 // VALIDATION DE L'INPUT -------------
-        $request->validate([
-            'team_id' => 'required|exists:teams,_id',
-            'character_id' => 'required|exists:characters,_id'
-        ]);
-
         $validSlots = ['slot1', 'slot2', 'slot3', 'slot4'];
         $slot = $request->slot;
-        $team = Team::where('_id', $request->team_id)->first();
+        $team = $this->getTeam($request);
         $character = Character::where('_id', $request->character_id)->first();
 
 
@@ -87,13 +82,7 @@ class TeamController extends Controller
     public function removeCharacterFromSlot(Request $request)
     {
 // VALIDATION DE L'INPUT -------------
-        $request->validate([
-            'team_id' => 'required|exists:teams,_id',
-            'character_id' => 'required|exists:characters,_id',
-            'slot' => 'required|in:slot1,slot2,slot3,slot4'
-        ]);
-
-        $team = Team::where('_id', $request->team_id)->first();
+        $team = $this->getTeam($request);
         $character = Character::where('_id', $request->character_id)->first();
         $slot = $request->slot;
 
@@ -122,11 +111,19 @@ class TeamController extends Controller
 
 
     /*
-     * FONCTION DE TEST POUR L'INSTANT
+     * RECUPERATION DE L'EQUIPE EN COURS
      */
     public function getTeam(Request $request)
     {
-        $team = Team::where('_id', $request->team_id)->first();
+        $user = $request->user();
+
+        $team = Team::where('user_id', $user->id)->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'Aucune team trouvée pour cet utilisateur'
+            ], 404);
+        }
 
         return $team;
     }

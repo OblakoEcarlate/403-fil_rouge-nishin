@@ -35,4 +35,9 @@ class User extends Authenticatable
 
     protected $primaryKey = '_id';
     protected $keyType = 'string';
+
+    public function team()
+    {
+        return $this->hasOne(Team::class, 'user_id');
+    }
 }

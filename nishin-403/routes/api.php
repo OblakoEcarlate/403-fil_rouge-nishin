@@ -8,6 +8,7 @@ use App\Http\Controllers\ArtifactsController;
 use App\Http\Controllers\TeamController;
 
 
+Route::middleware('auth:sanctum')->group(function () {
 //getArtifactsStats
 Route::get('/getArtifactStat', [ArtifactsController::class, 'getArtifactsStats']);
 
@@ -49,7 +50,7 @@ Route::delete('/removeCharacterFromSlot', [TeamController::class, 'removeCharact
 
 //getAllCharacter
 Route::get('/getAllCharacters', [TeamController::class, 'getAllCharacters']);
-
+});
 
 
 // LOGIN *************************

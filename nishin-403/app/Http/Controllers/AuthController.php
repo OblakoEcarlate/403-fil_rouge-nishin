@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,11 +32,22 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        $team = Team::create([
+            'user_id' => $user->_id,
+            'slots' => [
+                'slot1' => null,
+                'slot2' => null,
+                'slot3' => null,
+                'slot4' => null
+            ]
+        ]);
+
         $token = $user->createToken($request->device_name)->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token,
+            'team' => $team,
             'message' => 'Utilisateur créé avec succès'
         ], 201);
     }
