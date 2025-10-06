@@ -21,6 +21,8 @@ RUN pecl install mongodb \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+RUN composer require mongodb/laravel-mongodb
+
 # Create working directory and set permissions
 RUN mkdir -p /var/www/html \
     && chown -R www-data:www-data /var/www \

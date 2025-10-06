@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SimulationController;
@@ -45,3 +46,13 @@ Route::get('/getTeam', [TeamController::class, 'getTeam']);
 
 //removeCharacterFromSlot
 Route::delete('/removeCharacterFromSlot', [TeamController::class, 'removeCharacterFromSlot']);
+
+//getAllCharacter
+Route::get('/getAllCharacters', [TeamController::class, 'getAllCharacters']);
+
+
+
+// LOGIN *************************
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');

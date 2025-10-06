@@ -12,6 +12,15 @@ class TeamController extends Controller
 // TODO : créer collection "teams" lié à un user avec les personnages et slot dans un objet team
 // TODO : mettre une condition pour quand c'est pas le bon user de connecté pour qu'il ait que SON équipe
 //    TODO : Vérif l'erreur 500
+
+    public function getAllCharacters()
+    {
+        $characters = Character::all();
+
+        return $characters;
+    }
+
+
     /*
      * Ajout d'un personnage dans un slot
      */
