@@ -4,50 +4,56 @@ import Constants from 'expo-constants';
 import {Picker} from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
 const API_KEY = Constants.expoConfig.extra.API_KEY;
 
-
 const fetchTeam = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/getTeam?team_id=68dba59e213bfb469101ae92`, {
+        const token = await AsyncStorage.getItem('userToken');
+
+        const response = await fetch(`${API_BASE_URL}/getTeam`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
                 },
            });
        const data = await response.json();
        return data;
     } catch (error) {
-        console.error('Erreur fetch: ', error);
+        console.error('Erreur fetch team: ', error);
         }
     };
 
 const fetchCharacters = async () => {
     try {
+        const token = await AsyncStorage.getItem('userToken');
+
         const response = await fetch(`${API_BASE_URL}/getAllCharacters`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
                 },
             });
         const characters = await response.json();
         return characters;
     } catch (error) {
-        console.error('Erreur fetch: ', error);
+        console.error('Erreur fetch characters: ', error);
     }
 };
 
 const fetchArtifacts = async (characterId) => {
     try {
+        const token = await AsyncStorage.getItem('userToken');
+
         const response = await fetch(`${API_BASE_URL}/getArtifactStat?character_id=${characterId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
             }
         });
 
@@ -77,41 +83,57 @@ export default function NishinScreen() {
     const [damage, setDamage] = useState(null);
 
     const characterImages = {
-        'ayaka': require('../assets/personnages/ayaka.webp'),
-        'ayato': require('../assets/personnages/ayato.webp'),
-        'bennett': require('../assets/personnages/bennett.webp'),
-        'citlali': require('../assets/personnages/citlali.webp'),
-        'diona': require('../assets/personnages/diona.webp'),
-        'furina': require('../assets/personnages/furina.webp'),
-        'ganyu': require('../assets/personnages/ganyu.webp'),
-        'kazuha': require('../assets/personnages/kazuha.webp'),
-        'neuvillette': require('../assets/personnages/neuvillette.webp'),
-        'sucrose': require('../assets/personnages/sucrose.webp'),
-        'xiangling': require('../assets/personnages/xiangling.webp'),
-        'yanfei': require('../assets/personnages/yanfei.webp'),
-        'yoimiya': require('../assets/personnages/yoimiya.webp'),
-        'plus': require('../assets/icone/plus.png')
+        'ayaka': require('../../assets/personnages/ayaka.webp'),
+        'ayato': require('../../assets/personnages/ayato.webp'),
+        'bennett': require('../../assets/personnages/bennett.webp'),
+        'citlali': require('../../assets/personnages/citlali.webp'),
+        'diona': require('../../assets/personnages/diona.webp'),
+        'furina': require('../../assets/personnages/furina.webp'),
+        'ganyu': require('../../assets/personnages/ganyu.webp'),
+        'kazuha': require('../../assets/personnages/kazuha.webp'),
+        'neuvillette': require('../../assets/personnages/neuvillette.webp'),
+        'sucrose': require('../../assets/personnages/sucrose.webp'),
+        'xiangling': require('../../assets/personnages/xiangling.webp'),
+        'yanfei': require('../../assets/personnages/yanfei.webp'),
+        'yoimiya': require('../../assets/personnages/yoimiya.webp'),
+        'plus': require('../../assets/icone/plus.png')
     };
 
     const artifactImages = {
-        'slot1': require('../assets/artefact/fleur.webp'),
-        'slot2': require('../assets/artefact/plume.png'),
-        'slot3': require('../assets/artefact/sablier.webp'),
-        'slot4': require('../assets/artefact/coupe.png'),
-        'slot5': require('../assets/artefact/casque.png'),
+        'slot1': require('../../assets/artefact/fleur.webp'),
+        'slot2': require('../../assets/artefact/plume.png'),
+        'slot3': require('../../assets/artefact/sablier.webp'),
+        'slot4': require('../../assets/artefact/coupe.png'),
+        'slot5': require('../../assets/artefact/casque.png'),
     };
 
-    const navigateToAuth = () => {
-        router.replace('/auth');
+async function logout() {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+
+            const response = await fetch(`${API_BASE_URL}/logout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                    },
+            });
+
+            router.replace('/auth');
+        } catch (error) {
+            console.error('Erreur déconnexion: ', error);
+        }
     };
 
 const addCharacterToSlot = async (characterId, slot) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/addCharacterToSlot?team_id=68dba59e213bfb469101ae92`, {
+        const token = await AsyncStorage.getItem('userToken');
+
+        const response = await fetch(`${API_BASE_URL}/addCharacterToSlot`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 'character_id': characterId,
@@ -124,7 +146,7 @@ const addCharacterToSlot = async (characterId, slot) => {
         setTeamData(updatedTeam);
         closeModal();
     } catch (error) {
-        console.error('Erreur lors de l\'ajout:', error);
+        console.error('Erreur addCharacterToSlot: ', error);
     }
 }
 
@@ -135,11 +157,14 @@ const addArtifact = async (characterId, artifactStat, slotArtifact) => {
         } else if (slotArtifact == "slot2") {
             artifactStat = "ATK";
         }
+
+        const token = await AsyncStorage.getItem('userToken');
+
         const response = await fetch(`${API_BASE_URL}/addArtifact`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 main_stat: artifactStat,
@@ -155,17 +180,19 @@ const addArtifact = async (characterId, artifactStat, slotArtifact) => {
         fetchAndShowArtifacts();
         setArtifactsData(updatedArtifact);
     } catch (error) {
-        console.error("Erreur:", error);
+        console.error("Erreur addArtifact:", error);
     }
 };
 
 const removeArtifact = async (characterId, slotArtifact) => {
     try {
+        const token = await AsyncStorage.getItem('userToken');
+
         const response = await fetch(`${API_BASE_URL}/removeArtifact`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 slot: slotArtifact,
@@ -180,22 +207,23 @@ const removeArtifact = async (characterId, slotArtifact) => {
         fetchAndShowArtifacts();
         setArtifactsData(updatedArtifact);
     } catch (error) {
-        console.error("Erreur:", error);
+        console.error("Erreur removeArtifact :", error);
     }
 };
 
 const removeCharacter = async (characterId, slot) => {
     try {
+        const token = await AsyncStorage.getItem('userToken');
+
         const response = await fetch(`${API_BASE_URL}/removeCharacterFromSlot`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': API_KEY
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 slot: slot,
-                character_id: characterId,
-                team_id: '68dba59e213bfb469101ae92'
+                character_id: characterId
             })
         });
 
@@ -204,17 +232,19 @@ const removeCharacter = async (characterId, slot) => {
 
         setTeamData(updatedTeam);
     } catch (error) {
-        console.error("Erreur:", error);
+        console.error("Erreur dans le removeCharacter: ", error);
     }
 };
 
 async function getBasicDamage() {
         try {
-            const response = await fetch(`${API_BASE_URL}/simulateBasicDamageForDPS?team_id=68dba59e213bfb469101ae92`, {
+            const token = await AsyncStorage.getItem('userToken');
+
+            const response = await fetch(`${API_BASE_URL}/simulateBasicDamageForDPS`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': API_KEY,
+                    'Authorization': `Bearer ${token}`,
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache',
                     },
@@ -223,18 +253,20 @@ async function getBasicDamage() {
             const basicDamage = await response.json();
             return basicDamage;
         } catch (error) {
-            console.error('Erreur fetch: ', error);
+            console.error('Erreur basic damage: ', error);
         }
     };
 
 
 async function getArtifactDamage() {
         try {
-            const response = await fetch(`${API_BASE_URL}/simulateDamageWithArtifact?team_id=68dba59e213bfb469101ae92`, {
+            const token = await AsyncStorage.getItem('userToken');
+
+            const response = await fetch(`${API_BASE_URL}/simulateDamageWithArtifact`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': API_KEY,
+                    'Authorization': `Bearer ${token}`,
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache',
                     },
@@ -243,26 +275,28 @@ async function getArtifactDamage() {
             const artifactDamage = await response.json();
             return artifactDamage;
         } catch (error) {
-            console.error('Erreur fetch: ', error);
+            console.error('Erreur calculs artefacts: ', error);
         }
     };
 
 async function getDamage() {
         try {
-            const response = await fetch(`${API_BASE_URL}/simulateDamageForDPS?team_id=68dba59e213bfb469101ae92`, {
+            const token = await AsyncStorage.getItem('userToken');
+
+            const response = await fetch(`${API_BASE_URL}/simulateDamageForDPS`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': API_KEY,
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache',
+                    'Authorization': `Bearer ${token}`
                     },
                 });
 
+            console.log(response);
             const damage = await response.json();
+            console.log(damage);
             return damage;
         } catch (error) {
-            console.error('Erreur fetch: ', error);
+            console.error('Erreur calculs damage: ', error);
         }
     };
 
@@ -342,10 +376,10 @@ async function getDamage() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView>
+        <Pressable onPress={() => logout()}><Text>Déconnexion</Text></Pressable>
 
         <Text style={styles.title}>Nishin</Text>
 
-        <Pressable title="Test auth" onPress={navigateToAuth}><Text>POUR LA CONNEXION</Text></Pressable>
         <View style={{ marginHorizontal: 15}}>
         <Text style={styles.sectionLabel}>Équipe</Text>
         <View style={styles.teamRow}>
@@ -570,7 +604,7 @@ function SlotCard({data, slot, onSlotPress, onLongPress, characterImages, teamDa
 }
 
 function ArtifactCard({ slot, artifactData, artifactImages, onAddArtifact }) {
-    const artifactImage = artifactImages[slot] || require('../assets/icone/plus.png');
+    const artifactImage = artifactImages[slot] || require('../../assets/icone/plus.png');
 
     return (
         <TouchableOpacity
@@ -594,7 +628,7 @@ function ArtifactCard({ slot, artifactData, artifactImages, onAddArtifact }) {
                     ) : (
                         <>
                             <Image
-                                source={require('../assets/icone/plus.png')}
+                                source={require('../../assets/icone/plus.png')}
                                 style={styles.artifactImage}
                             />
                             <Text style={styles.artifactText}>

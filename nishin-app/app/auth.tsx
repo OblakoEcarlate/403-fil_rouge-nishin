@@ -11,12 +11,13 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   const goHome = () => {
     router.replace('/');
   };
 
-  const handleLogin = async () => {
+  const handleAuth = async () => {
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
@@ -25,33 +26,54 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const url = isRegisterMode ? `${API_BASE_URL}/register` : `${API_BASE_URL}/login`;
+      const body = isRegisterMode
+        ? JSON.stringify({
+            email: email,
+            password: password,
+            password_confirmation: password,
+            device_name: "React Native App"
+          })
+        : JSON.stringify({
+            email: email,
+            password: password,
+            device_name: "React Native App"
+          });
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': API_KEY
         },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          device_name: "React Native App"
-        })
+        body: body
       });
 
       const result = await response.json();
 
-      const token = result.token || result.access_token || result.data?.token;
-      const user = result.user || result.data?.user || result;
-
       if (response.ok) {
-        await AsyncStorage.setItem('userToken', result.token);
-        await AsyncStorage.setItem('userData', JSON.stringify(result.user));
+        const token = result.token || result.access_token || result.data?.token;
+        const user = result.user || result.data?.user || result;
 
-        Alert.alert('Succès', 'Connexion réussie !');
-        router.replace('/');
+        if (token) {
+          await AsyncStorage.setItem('userToken', token);
+          await AsyncStorage.setItem('userData', JSON.stringify(user));
+
+          Alert.alert('Succès', isRegisterMode ? 'Inscription réussie !' : 'Connexion réussie !');
+          router.replace('/');
+        } else {
+          Alert.alert('Erreur', 'Token non reçu');
+        }
       } else {
-        Alert.alert('Erreur', result.message || 'Erreur de connexion');
+        const errorMessage = result.message || result.error || 'Erreur lors de l\'authentification';
+
+        if (result.errors) {
+          const validationErrors = Object.values(result.errors).flat().join('\n');
+          Alert.alert('Erreur', validationErrors);
+        } else {
+          Alert.alert('Erreur', errorMessage);
+        }
       }
     } catch (error) {
       console.error("Erreur:", error);
@@ -61,13 +83,16 @@ export default function AuthPage() {
     }
   };
 
-  const handleRegister = () => {
-    router.push('/');
+  const toggleAuthMode = () => {
+    setIsRegisterMode(!isRegisterMode);
   };
 
   return (
     <View style={styles.mainContainer}>
       <Text style={styles.title}>Nishin</Text>
+      <Text style={styles.subtitle}>
+        {isRegisterMode ? 'Créer un compte' : 'Se connecter'}
+      </Text>
 
       <View style={styles.containerInput}>
         <Text style={styles.label}>Email</Text>
@@ -89,27 +114,46 @@ export default function AuthPage() {
           onChangeText={setPassword}
           secureTextEntry
         />
-        <Text style={styles.littleText}>Doit contenir un caractère spécial</Text>
+        <Text style={styles.littleText}>
+          {isRegisterMode ? 'Doit contenir un caractère spécial' : ''}
+        </Text>
       </View>
 
+      {isRegisterMode && (
+        <View style={styles.containerInput}>
+          <Text style={styles.label}>Confirmer le mot de passe</Text>
+          <TextInput
+            style={styles.inputForm}
+            secureTextEntry
+          />
+        </View>
+      )}
+
       <Pressable
-        style={[styles.loginButton, isLoading && styles.disabledButton]}
-        onPress={handleLogin}
+        style={[styles.authButton, isLoading && styles.disabledButton]}
+        onPress={handleAuth}
         disabled={isLoading}
       >
-        <Text style={styles.textButtonLogin}>
-          {isLoading ? 'Connexion...' : 'Se connecter'}
+        <Text style={styles.textButtonAuth}>
+          {isLoading
+            ? (isRegisterMode ? 'Inscription...' : 'Connexion...')
+            : (isRegisterMode ? 'S\'inscrire' : 'Se connecter')
+          }
         </Text>
       </Pressable>
 
-      <Text style={styles.littleTextAuth}>Pas encore de compte ?</Text>
+      <Text style={styles.littleTextAuth}>
+        {isRegisterMode ? 'Déjà un compte ?' : 'Pas encore de compte ?'}
+      </Text>
 
       <Pressable
-        style={styles.authButton}
-        onPress={handleRegister}
+        style={styles.switchModeButton}
+        onPress={toggleAuthMode}
         disabled={isLoading}
       >
-        <Text style={styles.textButtonAuth}>S'inscrire</Text>
+        <Text style={styles.textButtonSwitch}>
+          {isRegisterMode ? 'Se connecter' : 'S\'inscrire'}
+        </Text>
       </Pressable>
     </View>
   );
@@ -125,9 +169,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 35,
-    marginVertical: 20,
+    marginVertical: 10,
     fontWeight: 'bold',
     color: '#d66'
+  },
+  subtitle: {
+    fontSize: 18,
+    marginBottom: 20,
+    color: '#666'
   },
   containerInput: {
     marginVertical: 10,
@@ -155,6 +204,15 @@ const styles = StyleSheet.create({
     marginTop: 5
   },
   authButton: {
+    backgroundColor: '#d66',
+    borderRadius: 25,
+    padding: 12,
+    width: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30
+  },
+  switchModeButton: {
     borderColor: '#d66',
     borderWidth: 2,
     borderRadius: 25,
@@ -164,24 +222,16 @@ const styles = StyleSheet.create({
     width: 200,
     marginTop: 10
   },
-  loginButton: {
-    backgroundColor: '#d66',
-    borderRadius: 25,
-    padding: 12,
-    width: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30
-  },
   disabledButton: {
-    backgroundColor: '#ccc'
+    backgroundColor: '#ccc',
+    borderColor: '#ccc'
   },
-  textButtonLogin: {
+  textButtonAuth: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '800'
   },
-  textButtonAuth: {
+  textButtonSwitch: {
     color: '#d66',
     fontSize: 16,
     fontWeight: '800'
