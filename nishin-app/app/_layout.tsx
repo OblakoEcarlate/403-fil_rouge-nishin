@@ -1,32 +1,45 @@
-import { Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-const isLoggedIn = false;
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initDB } from '../services/database';
 
 export default function RootLayout() {
-  return (
-    <Stack>
-          <Stack.Protected guard={!isLoggedIn}>
-            <Stack.Screen name="auth" />
-          </Stack.Protected>
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
+  const segments = useSegments();
+  const router = useRouter();
 
-          <Stack.Protected guard={isLoggedIn}>
-            <Stack.Screen name="private" />
-          </Stack.Protected>
-        </Stack>
-  );
+  useEffect(() => {
+    checkAuth();
+    initDB();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      setIsLoggedIn(!!token);
+    } catch (error) {
+      console.error('Erreur checkAuth:', error);
+      setIsLoggedIn(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn === null) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isLoggedIn && !inAuthGroup) {
+      router.replace('/(auth)/auth');
+    } else if (isLoggedIn && inAuthGroup) {
+      router.replace('/(tabs)');
+    } else {
+        router.replace('/(auth)/auth');
+    }
+  }, [isLoggedIn]);
+
+  if (isLoggedIn === null) {
+    return null;
+  }
+
+  return <Slot />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-});

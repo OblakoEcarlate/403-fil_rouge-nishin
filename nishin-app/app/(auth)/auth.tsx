@@ -61,7 +61,7 @@ export default function AuthPage() {
           await AsyncStorage.setItem('userData', JSON.stringify(user));
 
           Alert.alert('Succès', isRegisterMode ? 'Inscription réussie !' : 'Connexion réussie !');
-          router.replace('/');
+          router.replace('/(tabs)');
         } else {
           Alert.alert('Erreur', 'Token non reçu');
         }
