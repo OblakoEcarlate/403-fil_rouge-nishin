@@ -17,7 +17,8 @@ class Team extends Model
 
     protected $fillable = [
         'slots',
-        'user_id'
+        'user_id',
+        'character_id'
     ];
 
     protected $attributes = [
