@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SyncController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SimulationController;
@@ -7,6 +9,7 @@ use App\Http\Controllers\ArtifactsController;
 use App\Http\Controllers\TeamController;
 
 
+Route::middleware('auth:sanctum')->group(function () {
 //getArtifactsStats
 Route::get('/getArtifactStat', [ArtifactsController::class, 'getArtifactsStats']);
 
@@ -45,3 +48,18 @@ Route::get('/getTeam', [TeamController::class, 'getTeam']);
 
 //removeCharacterFromSlot
 Route::delete('/removeCharacterFromSlot', [TeamController::class, 'removeCharacterFromSlot']);
+
+//getAllCharacter
+Route::get('/getAllCharacters', [TeamController::class, 'getAllCharacters']);
+
+
+Route::post('/sync/push', [SyncController::class, 'pushChanges']);
+Route::get('/sync/changes', [SyncController::class, 'getChanges']);
+Route::get('/sync/full', [SyncController::class, 'fullSync']);
+});
+
+
+// LOGIN *************************
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');

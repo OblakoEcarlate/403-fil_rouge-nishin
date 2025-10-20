@@ -17,12 +17,18 @@ class Team extends Model
 
     protected $fillable = [
         'slots',
-        'user_id'
+        'user_id',
+        'character_id'
     ];
 
-//    protected $casts = [
-//        'slots' => 'array'
-//    ];
+    protected $attributes = [
+        'slots' => [
+            'slot1' => null,
+            'slot2' => null,
+            'slot3' => null,
+            'slot4' => null
+        ]
+    ];
 
     public function character(): EmbedsMany
     {
