@@ -1,41 +1,39 @@
-FROM php:8.2-fpm
+# ==============================
+# 🐘 Base image
+# ==============================
+FROM php:8.3-fpm
 
-# Install system dependencies
+# ==============================
+# 📦 Préparation de l’environnement
+# ==============================
+
+# Installer les extensions nécessaires à Laravel + MongoDB
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    libpng-dev \
-    libonig-dev \
-    libssl-dev \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+    git unzip libpng-dev libonig-dev libxml2-dev libzip-dev zip curl \
+    pkg-config libssl-dev libsasl2-dev \
+ && docker-php-ext-install pdo pdo_mysql zip \
+ && pecl install mongodb \
+ && docker-php-ext-enable mongodb \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install -j$(nproc) zip pdo_mysql mbstring exif pcntl gd
-
-# Install MongoDB extension
-RUN pecl install mongodb \
-    && docker-php-ext-enable mongodb
-
-# Install Composer
+# Installer Composer globalement
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN composer require mongodb/laravel-mongodb
-
-# Create working directory and set permissions
-RUN mkdir -p /var/www/html \
-    && chown -R www-data:www-data /var/www \
-    && chmod -R 775 /var/www
-
-# Create storage directory structure with correct permissions
-RUN mkdir -p /var/www/html/storage/framework/{cache,sessions,views} \
-    && mkdir -p /var/www/html/storage/logs \
-    && chown -R www-data:www-data /var/www/html/storage \
-    && chmod -R 775 /var/www/html/storage
-
-# Set working directory
+# ==============================
+# 📁 Dossier de travail
+# ==============================
 WORKDIR /var/www/html
 
-# Switch to www-data user
+# Copier d’abord les fichiers de dépendances pour profiter du cache Docker
+COPY composer.json composer.lock ./
+
+# Copier le reste du code source
+COPY . .
+
+# Installer les dépendances PHP (sans dev pour build)
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+# ==============================
+# 🔒 Lancer sous www-data
+# ==============================
 USER www-data
