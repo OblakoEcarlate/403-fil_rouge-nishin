@@ -1,9 +1,9 @@
-<h1 align="center"><a href="https://github.com/OblakoEcarlate/403-fil_rouge-nishin" target="_blank">Nishin</a></h1>
+<h1 align="center"><a href="https://github.com/OblakoEcarlate/403-fil_rouge-nishin" target="_blank">Nishin</a></h1><h1 align="center"><a href="https://github.com/OblakoEcarlate/403-fil_rouge-nishin" target="_blank">Fil-rouge 403 - Nishin</a></h1>
 
 
 ## A propos de Nishin
 
-Nishin est une application basée sur le jeu "Genshin Impact" permettant 
+Nishin est une application basée sur le jeu "Genshin Impact" permettant
 de calculer les dégâts d'un personnage DPS au sein d'une équipe de 3 autres
 Support. Chaque personnage peut avoir des artéfacts qui donnent des statistiques
 supplémentaires et peut donner un bonus (si c'est un support).
@@ -22,17 +22,28 @@ supplémentaires et peut donner un bonus (si c'est un support).
 
 - **Docker** : [Suivre ce lien si besoin](https://docs.docker.com/desktop/setup/install/linux/).
 - **GIT**
+- **Composer**
 
 
 ### Clonage et configuration du projet
 ```
 git clone git@github.com:OblakoEcarlate/403-fil_rouge-nishin.git
 
-cd /nishin-403
+git switch develop
+
+git pull origin develop
 
 cp .env.example .env
 
-docker compose run --rm app php artisan key:generate
+sudo make init
+
+composer require laravel/sanctum --no-interaction --no-progress
+
+composer require mongodb/laravel-mongodb 
+
+make up
+
+make logs
 ```
 
 
@@ -61,7 +72,7 @@ Services :
 
 ## Variables d'environnement
 
-Créez un fichier .env à la racine : 
+Créez un fichier .env à la racine :
 
 ### Configuration BDD
 - DB_CONNECTION=mongodb
@@ -78,7 +89,7 @@ Créez un fichier .env à la racine :
 
 
 
-## Commandes de base
+## Commandes de base docker
 
 Démarrer les conteneurs
 ```
@@ -106,4 +117,32 @@ docker compose logs mongo
 Exécuter une commande artisan dans le conteneur
 ```
 docker compose exec app php artisan [command]
+```
+
+
+## Commandes de base make
+
+Initialisation
+```
+make init
+```
+
+Lancement du projet
+```
+make up
+```
+
+Stopper le projet
+```
+make down
+```
+
+Voir les logs
+```
+make logs
+```
+
+Tout recommencer - donc reprendre à l'étape d'initalisation
+```
+make reset
 ```
