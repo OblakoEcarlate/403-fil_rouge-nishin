@@ -294,7 +294,7 @@ class SimulationController extends Controller
 
     private function getCharacterFromSlot(Request $request, string $slot)
     {
-        $team = Team::where('_id', $request->team_id)->first();
+        $team = $request->user()->team;
 
         if (!$team) {
             throw new \Exception("Équipe non trouvée");

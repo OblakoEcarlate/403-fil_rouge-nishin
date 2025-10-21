@@ -12,20 +12,24 @@ class TeamController extends Controller
 // TODO : créer collection "teams" lié à un user avec les personnages et slot dans un objet team
 // TODO : mettre une condition pour quand c'est pas le bon user de connecté pour qu'il ait que SON équipe
 //    TODO : Vérif l'erreur 500
+
+    public function getAllCharacters()
+    {
+        $characters = Character::all();
+
+        return $characters;
+    }
+
+
     /*
      * Ajout d'un personnage dans un slot
      */
     public function addCharacterToSlot(Request $request)
     {
 // VALIDATION DE L'INPUT -------------
-        $request->validate([
-            'team_id' => 'required|exists:teams,_id',
-            'character_id' => 'required|exists:characters,_id'
-        ]);
-
         $validSlots = ['slot1', 'slot2', 'slot3', 'slot4'];
         $slot = $request->slot;
-        $team = Team::where('_id', $request->team_id)->first();
+        $team = $this->getTeam($request);
         $character = Character::where('_id', $request->character_id)->first();
 
 
@@ -78,13 +82,7 @@ class TeamController extends Controller
     public function removeCharacterFromSlot(Request $request)
     {
 // VALIDATION DE L'INPUT -------------
-        $request->validate([
-            'team_id' => 'required|exists:teams,_id',
-            'character_id' => 'required|exists:characters,_id',
-            'slot' => 'required|in:slot1,slot2,slot3,slot4'
-        ]);
-
-        $team = Team::where('_id', $request->team_id)->first();
+        $team = $this->getTeam($request);
         $character = Character::where('_id', $request->character_id)->first();
         $slot = $request->slot;
 
@@ -113,11 +111,19 @@ class TeamController extends Controller
 
 
     /*
-     * FONCTION DE TEST POUR L'INSTANT
+     * RECUPERATION DE L'EQUIPE EN COURS
      */
     public function getTeam(Request $request)
     {
-        $team = Team::where('_id', $request->team_id)->first();
+        $user = $request->user();
+
+        $team = Team::where('user_id', $user->id)->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'Aucune team trouvée pour cet utilisateur'
+            ], 404);
+        }
 
         return $team;
     }

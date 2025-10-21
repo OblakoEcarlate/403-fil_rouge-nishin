@@ -23,10 +23,12 @@ return [
 
     // Origines explicites (utilise ceci si supports_credentials = true)
     'allowed_origins' => [
-        'http://localhost:19006',
-        'http://127.0.0.1:19006',
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
+        '*'
+//        'http://localhost:19006',
+//        'http://127.0.0.1:19006',
+//        'http://localhost:5173',
+//        'http://127.0.0.1:5173',
+
     ],
 
     // Motifs (regex) d’origines autorisées. Pratique pour le LAN (téléphone réel)
