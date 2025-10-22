@@ -664,14 +664,14 @@ useEffect(() => {
             onRequestClose={closeModal}
         >
             <View>
-                <Pressable onPress={closeModal}>
-                    <Text>✕</Text>
-                </Pressable>
+
 
                 <Text style={styles.modalTitle}>
                     Choisir un personnage {!isOnline && '(Mode hors ligne)'}
                 </Text>
-
+<Pressable onPress={closeModal}>
+                    <Text>✕</Text>
+                </Pressable>
                 <View style={styles.containerModal}>
                     <FlatList
                         vertical
