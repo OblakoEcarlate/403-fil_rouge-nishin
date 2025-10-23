@@ -9,27 +9,60 @@ use Carbon\Carbon;
 
 class SyncController extends Controller
 {
-    public function pushChanges(Request $request)
-    {
-        $records = $request->input('records', []);
-        $syncedIds = [];
 
-        foreach ($records as $data) {
-            $character = Character::find($data['id']);
-            if (!$character) {
-                // Nouveau document
-                Character::create($data);
-                $syncedIds[] = $data['id'];
-            } else {
-                // Compare les timestamps pour éviter d’écraser du récent
-                if ($data['updated_at'] > $character->updated_at) {
-                    $character->update($data);
-                    $syncedIds[] = $character->_id;
-                }
+    public function pushTeam(Request $request)
+    {
+        $data = $request->input('team');
+
+        if (!$data || !isset($data['id'], $data['updated_at'], $data['slots'])) {
+            return response()->json(['error' => 'Team invalide'], 400);
+        }
+
+        $user = $request->user();
+        $team = Team::where('user_id', $user->id)->first();
+
+        // 🔹 Validation des personnages
+        $slots = $data['slots'];
+        foreach ($slots as $slotName => $characterId) {
+            if ($characterId && !Character::where('id', $characterId)->exists()) {
+                $slots[$slotName] = null;
             }
         }
 
-        return response()->json(['syncedIds' => $syncedIds]);
+        $incomingUpdatedAt = Carbon::parse($data['updated_at']);
+
+        // 🆕 Création si absente
+        if (!$team) {
+            $team = Team::create([
+                'id' => $data['id'],
+                'user_id' => $user->id,
+                'slots' => $slots, // plus besoin de json_encode !
+                'updated_at' => $incomingUpdatedAt,
+            ]);
+
+            return response()->json([
+                'message' => 'Team créée sur le serveur',
+                'team' => $team,
+            ]);
+        }
+
+        // 🔄 Mise à jour si plus récent
+        if ($incomingUpdatedAt->gt($team->updated_at)) {
+            $team->update([
+                'slots' => $slots, // directement l'objet
+                'updated_at' => $incomingUpdatedAt,
+            ]);
+
+            return response()->json([
+                'message' => 'Team mise à jour depuis le front',
+                'team' => $team,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Version serveur conservée',
+            'team' => $team,
+        ]);
     }
 
 

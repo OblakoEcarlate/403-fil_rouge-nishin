@@ -53,7 +53,7 @@ Route::delete('/removeCharacterFromSlot', [TeamController::class, 'removeCharact
 Route::get('/getAllCharacters', [TeamController::class, 'getAllCharacters']);
 
 
-Route::post('/sync/push', [SyncController::class, 'pushChanges']);
+Route::post('/sync/push', [SyncController::class, 'pushTeam']);
 Route::get('/sync/changes', [SyncController::class, 'getChanges']);
 Route::get('/sync/full', [SyncController::class, 'fullSync']);
 });

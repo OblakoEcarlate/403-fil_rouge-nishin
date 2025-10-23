@@ -126,6 +126,8 @@ export async function pullChangesTeams(token) {
     const team = data.team[0] || null;
     const serverTimestamp = data.serverTimestamp || Math.floor(Date.now() / 1000);
 
+    console.log(team)
+
     if (!team) {
       console.log('⚠️ Aucune mise à jour de team trouvée sur le serveur.');
       await setLastSyncTeams(db, serverTimestamp);
