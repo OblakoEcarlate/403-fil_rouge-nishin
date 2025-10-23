@@ -1,7 +1,7 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { initDB } from '../services/database';
+// import { initDB } from '../services/database';
 
 export default function RootLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
@@ -10,7 +10,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     checkAuth();
-    initDB();
+    // initDB();
   }, []);
 
   const checkAuth = async () => {

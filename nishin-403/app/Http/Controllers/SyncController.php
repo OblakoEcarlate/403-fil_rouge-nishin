@@ -5,130 +5,76 @@ use Illuminate\Http\Request;
 use App\Models\Team;
 use App\Models\Character;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class SyncController extends Controller
 {
     public function pushChanges(Request $request)
     {
-        $user = $request->user();
+        $records = $request->input('records', []);
+        $syncedIds = [];
 
-        $validator = Validator::make($request->all(), [
-            'slots' => 'required|array',
-            'slots.slot1' => 'nullable|array',
-            'slots.slot2' => 'nullable|array',
-            'slots.slot3' => 'nullable|array',
-            'slots.slot4' => 'nullable|array',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $team = Team::firstOrCreate(
-            ['user_id' => $user->id],
-            ['slots' => [
-                'slot1' => null,
-                'slot2' => null,
-                'slot3' => null,
-                'slot4' => null
-            ]]
-        );
-
-        $team->slots = $request->input('slots');
-        $team->save();
-
-        foreach ($request->input('slots') as $slotName => $characterData) {
-            if ($characterData && isset($characterData['_id'])) {
-                $character = Character::find($characterData['_id']);
-                if ($character) {
-                    $slotNumber = (int) str_replace('slot', '', $slotName);
-                    $character->slot = $slotNumber;
-                    $character->save();
+        foreach ($records as $data) {
+            $character = Character::find($data['id']);
+            if (!$character) {
+                // Nouveau document
+                Character::create($data);
+                $syncedIds[] = $data['id'];
+            } else {
+                // Compare les timestamps pour éviter d’écraser du récent
+                if ($data['updated_at'] > $character->updated_at) {
+                    $character->update($data);
+                    $syncedIds[] = $character->_id;
                 }
             }
         }
 
-        $currentCharacterIds = collect($team->slots)
-            ->filter()
-            ->pluck('_id')
-            ->toArray();
-
-        Character::where('user_id', $user->id)
-            ->where('slot', '>', 0)
-            ->whereNotIn('_id', $currentCharacterIds)
-            ->update(['slot' => 0]);
-
-        return response()->json([
-            'success' => true,
-            'team' => $team->fresh()
-        ]);
+        return response()->json(['syncedIds' => $syncedIds]);
     }
+
 
     public function getChanges(Request $request)
     {
+        $since = (int) $request->query('since', 0);
+        $date = Carbon::createFromTimestamp($since);
+
         $user = $request->user();
-        $since = $request->query('since', '2000-01-01');
 
+        // Personnages modifiés/supprimés globalement
+        $characters = Character::withTrashed()
+            ->where(function ($q) use ($date) {
+                $q->where('updated_at', '>', $date)
+                ->orWhere('deleted_at', '>', $date);
+            })
+            ->get();
+
+        // Teams modifiées (slots changés)
         $team = Team::where('user_id', $user->id)
-            ->where('updated_at', '>', $since)
-            ->first();
-
-        if (!$team) {
-            $team = Team::firstOrCreate(
-                ['user_id' => $user->id],
-                ['slots' => [
-                    'slot1' => null,
-                    'slot2' => null,
-                    'slot3' => null,
-                    'slot4' => null
-                ]]
-            );
-        }
-
-        $characters = Character::where('user_id', $user->id)
-            ->where('updated_at', '>', $since)
+            ->where('updated_at', '>=', $date)
             ->get();
 
         return response()->json([
-            'now' => now()->toISOString(),
-            'team' => [
-                'id' => $team->_id,
-                'user_id' => $team->user_id,
-                'slots' => $team->slots,
-                'updated_at' => $team->updated_at
-            ],
-            'characters' => $characters
+            'characters' => $characters,
+            'team' => $team,
+            'serverTimestamp' => time(),
         ]);
     }
+
 
     public function fullSync(Request $request)
     {
         $user = $request->user();
 
-        $team = Team::firstOrCreate(
-            ['user_id' => $user->id],
-            ['slots' => [
-                'slot1' => null,
-                'slot2' => null,
-                'slot3' => null,
-                'slot4' => null
-            ]]
-        );
-
         $characters = Character::all();
+        $team = Team::where('user_id', $user->id)->get();
 
         return response()->json([
-            'team' => [
-                'id' => $team->_id,
-                'user_id' => $team->user_id,
-                'slots' => $team->slots,
-                'updated_at' => $team->updated_at
-            ],
-            'characters' => $characters
+            'characters' => $characters,
+            'team' => $team[0],
+            'serverTimestamp' => time()
         ]);
     }
+
+
 
 }

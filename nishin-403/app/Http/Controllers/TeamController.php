@@ -22,92 +22,108 @@ class TeamController extends Controller
 
 
     /*
-     * Ajout d'un personnage dans un slot
-     */
+    * Ajout d'un personnage dans un slot
+    */
     public function addCharacterToSlot(Request $request)
     {
-// VALIDATION DE L'INPUT -------------
+        // ✅ VALIDATION DE L'INPUT
         $validSlots = ['slot1', 'slot2', 'slot3', 'slot4'];
         $slot = $request->slot;
-        $team = $this->getTeam($request);
-        $character = Character::where('_id', $request->character_id)->first();
+        $team = $this->getTeamForBackend($request);
+        $character = Character::find($request->character_id);
 
-
-// VERIFICATION -------------------
-        $isCharacterInTeam = false;
-        foreach ($team->slots as $slotCharacter) {
-            if (isset($slotCharacter['id']) && $slotCharacter['id'] == $character->_id) {
-                $isCharacterInTeam = true;
-                break;
-            }
-        }
-
-        if ($isCharacterInTeam) {
-            return response()->json(['error' => "Ce personnage est déjà dans l'équipe"], 400);
-        }
-
-        if (!$team->isSlotAvailable($slot)) {
-            return response()->json(['error' => 'ERREUR : Slot déjà rempli !'], 400);
+        if (!$character) {
+            return response()->json(['error' => 'Personnage introuvable'], 404);
         }
 
         if (!in_array($slot, $validSlots)) {
             return response()->json(['error' => 'ERREUR : slot invalide'], 400);
         }
 
-
-// ASSIGNATION ------------
-        if ($character->type == "DPS" && $team->isSlotAvailable('slot1')) {
-            $team->assignToSlot('slot1', $character);
-            $character->slot = 1;
+        // ✅ VÉRIFICATION — le perso est-il déjà dans la team ?
+        $isCharacterInTeam = in_array((string) $character->_id, $team->slots ?? [], true);
+        if ($isCharacterInTeam) {
+            return response()->json(['error' => "Ce personnage est déjà dans l'équipe"], 400);
         }
 
-        if ($character->type == "SUPPORT" && ($team->isSlotAvailable($slot) && $slot !== 'slot1')) {
-            $team->assignToSlot($slot, $character);
-            $character->slot = $slot;
+        // ✅ VÉRIF SLOT LIBRE
+        if (!$team->isSlotAvailable($slot)) {
+            return response()->json(['error' => 'ERREUR : Slot déjà rempli !'], 400);
         }
 
-// SAVE DE L'ETAT ----------------
+        // ✅ ASSIGNATION selon le type
+        if ($character->type === "DPS") {
+            if ($team->isSlotAvailable('slot1')) {
+                $team->assignToSlot('slot1', $character);
+            } else {
+                return response()->json(['error' => 'Le slot1 (DPS) est déjà occupé !'], 400);
+            }
+        } elseif ($character->type === "SUPPORT") {
+            if ($slot !== 'slot1' && $team->isSlotAvailable($slot)) {
+                $team->assignToSlot($slot, $character);
+            } else {
+                return response()->json(['error' => 'Slot invalide ou déjà pris pour un support'], 400);
+            }
+        } else {
+            return response()->json(['error' => 'Type de personnage inconnu'], 400);
+        }
+
+        // ✅ SAUVEGARDE uniquement la team
         $team->save();
-        $character->save();
 
+        // ✅ RETOUR JSON enrichi (avec infos des persos)
         return response()->json([
-            'team' => $team->fresh(['slots']),
-            'character' => $character->fresh()
+            'team' => [
+                '_id' => $team->_id,
+                'slots' => $team->getSlotsWithCharacters(), // ⚡ ici on renvoie les persos complets
+                'user_id' => $team->user_id,
+                'created_at' => $team->created_at,
+                'updated_at' => $team->updated_at,
+            ]
         ]);
     }
+
 
     /*
-     * Suppression d'un personnage précis d'un slot
-     */
+    * Suppression d'un personnage précis d'un slot
+    */
     public function removeCharacterFromSlot(Request $request)
     {
-// VALIDATION DE L'INPUT -------------
         $team = $this->getTeam($request);
-        $character = Character::where('_id', $request->character_id)->first();
+        $character = Character::find($request->character_id);
         $slot = $request->slot;
 
-
-// CONDITION -------------------
-        if (!isset($team->slots[$slot]) || !isset($team->slots[$slot]['id']) || $team->slots[$slot]['id'] != $character->_id) {
-            return response()->json(['error' => 'Ce personnage n\'est pas dans le slot spécifié'], 400);
+        if (!$character) {
+            return response()->json(['error' => 'Personnage introuvable'], 404);
         }
 
+        // ⚙️ On récupère la valeur stockée dans le slot (peut être un string OU un array)
+        $slotValue = $team->slots[$slot] ?? null;
+        $slotCharacterId = is_array($slotValue) ? ($slotValue['id'] ?? null) : $slotValue;
 
-// ASSIGNATION ------------
+        // 🚫 Si le slot est vide ou ne correspond pas à ce perso
+        if (!$slotCharacterId || (string)$slotCharacterId !== (string)$character->_id) {
+            return response()->json(['error' => 'Ce personnage n\'est pas dans ce slot'], 400);
+        }
+
+        // ✅ Désassignation
         $team->unassignFromSlot($slot, $character);
-        $character->slot = 0;
 
-
-// SAVE DE L'ETAT ------------
+        // ✅ Sauvegarde uniquement la Team (on ne touche pas au Character)
         $team->save();
-        $character->save();
 
-
+        // ✅ Retour JSON enrichi
         return response()->json([
-            'team' => $team->fresh(),
-            'character' => $character->fresh()
+            'team' => [
+                '_id' => $team->_id,
+                'slots' => $team->getSlotsWithCharacters(),
+                'user_id' => $team->user_id,
+                'created_at' => $team->created_at,
+                'updated_at' => $team->updated_at,
+            ]
         ]);
     }
+
 
 
     /*
@@ -125,6 +141,14 @@ class TeamController extends Controller
             ], 404);
         }
 
+        $team->slots = $team->populateSlots();
+
         return $team;
+    }
+
+    public function getTeamForBackend(Request $request): Team
+    {
+        $user = auth()->user();
+        return Team::where('user_id', $user->_id)->firstOrFail();
     }
 }

@@ -300,7 +300,7 @@ class SimulationController extends Controller
             throw new \Exception("Équipe non trouvée");
         }
 
-        $character = $team->slots[$slot] ?? null;
+        $character = $team->getCharacterForSlot($slot) ?? null;
 
         if (!$character) {
             throw new \Exception("Personnage non trouvé dans le slot $slot");

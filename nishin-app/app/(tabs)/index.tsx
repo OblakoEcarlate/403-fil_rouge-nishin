@@ -4,11 +4,13 @@ import Constants from 'expo-constants';
 import {Picker} from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-
-import { initDB, saveTeamSlot, removeTeamSlot, saveArtifact, removeArtifactLocal, loadBaseCharacters } from '../../services/database';
-import { syncWithServer } from '../../services/sync';
+import { checkTables, describeTable, dumpCharacters, testDatabaseConnection, dumpTeams } from '../../services/debug';
+import { maybeRunFullSync } from '../../services/sync/syncManager';
+import { pullChangesCharacters, pullChangesTeams } from '../../services/sync/pullChanges';
+import { deleteDatabase, setupDatabase } from '../../services/database';
 import * as SQLite from 'expo-sqlite';
 
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
@@ -17,7 +19,6 @@ const API_KEY = Constants.expoConfig.extra.API_KEY;
 export default function NishinScreen() {
     const [teamData, setTeamData] = useState(null);
     const [error, setError] = useState(null);
-    const [charactersData, setCharactersData] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [selectedSlotData, setSelectedSlotData] = useState(null);
@@ -29,12 +30,10 @@ export default function NishinScreen() {
     const [basicDamage, setBasicDamage] = useState(null);
     const [artifactDamage, setArtifactDamage] = useState(null);
     const [damage, setDamage] = useState(null);
-    const [charactersLocal, setCharactersLocal] = useState([]);
-
-
-//     SYNC
+    const [charactersLocal, setCharactersLocal] = useState(null);
     const [isOnline, setIsOnline] = useState(true);
-    const [syncStatus, setSyncStatus] = useState('');
+    // A VOIR POUR LUI
+    // const [syncStatus, setSyncStatus] = useState('');
     const router = useRouter();
 
     const characterImages = {
@@ -62,131 +61,78 @@ export default function NishinScreen() {
         'slot5': require('../../assets/artefact/casque.png'),
     };
 
+    const getSlotId = (s: any) => (typeof s === 'string' ? s : s?.id ?? null);
 
-const fetchTeam = async () => {
-    try {
-        const token = await AsyncStorage.getItem('userToken');
-        if (!token) return null;
-
-        // 1️⃣ Si en ligne : fetch API
-        if (isOnline) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/getTeam`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // 💾 Sauvegarder dans la DB locale
-                    const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-                    await db.runAsync(
-                        `INSERT OR REPLACE INTO teams_local (id, user_id, slots, updated_at, dirty)
-                         VALUES (?, ?, ?, ?, 0)`,
-                        [
-                            'main_team',
-                            data.user_id || 'unknown',
-                            JSON.stringify(data.slots || {}),
-                            Math.floor(Date.now() / 1000)
-                        ]
-                    );
-
-                    return data;
-                }
-            } catch (fetchError) {
-                console.warn('⚠️ Erreur fetch, basculement sur cache local');
-            }
-        }
-
-        // 2️⃣ Si hors ligne OU erreur : charger depuis SQLite
-        console.log('📂 Chargement depuis la base locale...');
-        const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-        const localTeam = await db.getFirstAsync(
-            'SELECT * FROM teams_local LIMIT 1'
-        );
-
-        console.log('je suis une local team : ' + localTeam);
-        if (localTeam) {
-            return {
-                user_id: localTeam.user_id,
-                slots: JSON.parse(localTeam.slots)
-            };
-        }
-
-        return null;
-
-    } catch (error) {
-        console.error('❌ Erreur fetch team:', error);
-        return null;
+    const enrichSlots = (slotsData: any, charactersMap: Record<string, any>) => {
+    const enriched: Record<string, any> = {};
+    for (const [slotName, slotValue] of Object.entries(slotsData || {})) {
+        const id = getSlotId(slotValue);
+        enriched[slotName] = id ? charactersMap[id] ?? null : null;
     }
-};
+    return enriched;
+    };
 
-const fetchCharacters = async () => {
-    try {
-        if (isOnline) {
-            Alert.alert('Debug', '📡 Chargement depuis API...');
 
-            const token = await AsyncStorage.getItem('userToken');
-            const response = await fetch(`${API_BASE_URL}/getAllCharacters`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-            });
-            const data = await response.json();
+// const fetchTeam = async () => {
+//     try {
+//         const token = await AsyncStorage.getItem('userToken');
+//         if (!token) return null;
 
-            Alert.alert('Debug', `✅ API: ${data.length} personnages`);
+//         if (isOnline) {
+//             try {
+//                 const response = await fetch(`${API_BASE_URL}/getTeam`, {
+//                     method: 'GET',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         'Authorization': `Bearer ${token}`
+//                     },
+//                 });
 
-            // Sauvegarde dans la DB
-            const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-            await db.runAsync('DELETE FROM characters_local');
+//                 if (response.ok) {
+//                     const data = await response.json();
+//                     setTeamData(data);
+//                     return data;
+//                 }
+//             } catch (fetchError) {
+//                 console.warn('⚠️ Erreur fetch, basculement sur cache local');
+//             }
+//         }
 
-            for (const char of data) {
-                await db.runAsync(
-                    `INSERT INTO characters_local (id, name, type, element, weapon, rarity, image_url, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [char.id, char.name, char.type, char.element, char.weapon, char.rarity, char.image_url, Date.now()]
-                );
-            }
+//         // TODO : faire la fonction pour hors ligne
 
-            Alert.alert('Debug', '💾 Personnages sauvegardés dans la DB');
-            return data;
+//     } catch (error) {
+//         console.error('❌ Erreur fetch team:', error);
+//         return null;
+//     }
+// };
 
-        } else {
-            Alert.alert('Debug', '📂 Chargement depuis DB locale...');
+// const fetchCharacters = async () => {
+//     try {
+//         const token = await AsyncStorage.getItem('userToken');
+//         if (!token) return null;
 
-            const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-            const chars = await db.getAllAsync('SELECT * FROM characters_local');
+//         if (isOnline) {
+//             const response = await fetch(`${API_BASE_URL}/getAllCharacters`, {
+//                 method: 'GET',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${token}`
+//                 },
+//             });
+//             const data = await response.json();
 
-            // 🔥 CORRIGÉ : Alert avec format correct
-            Alert.alert(
-                'Debug DB',
-                `✅ ${chars.length} personnages trouvés\n\n` +
-                `Premier: ${chars[0] ? JSON.stringify(chars[0], null, 2) : 'AUCUN'}`
-            );
+//             setCharactersLocal(data);
+            
+//             return data;
+//         }
 
-            return chars;
-        }
-    } catch (error) {
-        Alert.alert('❌ Erreur', error.message);
-
-        // Fallback
-        try {
-            const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-            const chars = await db.getAllAsync('SELECT * FROM characters_local');
-            Alert.alert('🆘 Fallback', `${chars.length} personnages récupérés`);
-            return chars;
-        } catch (dbError) {
-            Alert.alert('❌ Erreur Fallback', dbError.message);
-            return [];
-        }
-    }
-};
+//         // TODO : faire la fonction hors ligne
+    
+//     } catch (error) {
+//         console.error('❌ Erreur fetch characters:', error);
+//         return null;
+//     }
+// };
 
 
 
@@ -194,60 +140,39 @@ const fetchCharacters = async () => {
 
 
 const fetchArtifacts = async (characterId) => {
-    try {
-        const token = await AsyncStorage.getItem('userToken');
-        if (!token) return [];
+    const token = await AsyncStorage.getItem('userToken');
+    if (!token) return null;
 
-        // 1️⃣ Si en ligne : fetch API
-        if (isOnline) {
-            try {
-                const response = await fetch(
-                    `${API_BASE_URL}/getArtifactStat?character_id=${characterId}`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        }
+    if (isOnline) {
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/getArtifactStat?character_id=${characterId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     }
-                );
-
-                if (response.ok) {
-                    const artifacts = await response.json();
-
-                    return artifacts;
                 }
-            } catch (fetchError) {
-                console.warn('⚠️ Erreur fetch artifacts, basculement sur cache');
+            );
+
+            if (response.ok) {
+                const artifacts = await response.json();
+
+                setArtifactsData(artifacts);
+                return artifacts;
             }
+        } catch (fetchError) {
+            console.log('⚠️ Erreur fetch artifacts');
         }
-
-        // 2️⃣ Si hors ligne : charger depuis SQLite
-        console.log('📂 Chargement artifacts depuis cache...');
-        const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-        const localArtifacts = await db.getAllAsync(
-            'SELECT * FROM artifacts_local WHERE character_id = ?',
-            [characterId]
-        );
-
-        return localArtifacts.map(art => ({
-            slot: art.slot,
-            main_stat: art.main_stat,
-            stat_value: art.stat_value
-        }));
-
-    } catch (error) {
-        console.error('❌ Erreur fetch artifacts:', error);
-        return [];
     }
 };
 
 
 
 const logout = async () => {
+    const token = await AsyncStorage.getItem('userToken');
     try {
-      const token = await AsyncStorage.getItem('userToken');
-
       await fetch(`${API_BASE_URL}/logout`, {
         method: 'POST',
         headers: {
@@ -266,45 +191,81 @@ const logout = async () => {
     }
   };
 
-//  TODO juste pour dire ça a été modifié pour la sync
-const addCharacterToSlot = async (characterId, slot) => {
-        try {
-            await saveTeamSlot(slot, characterId);
 
-            if (isOnline) {
-                const token = await AsyncStorage.getItem('userToken');
-                await fetch(`${API_BASE_URL}/addCharacterToSlot`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        'character_id': characterId,
-                        'slot': slot
-                    })
-                });
-            }
+const addCharacterToSlot = async (characterId: string, slot: string) => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    const db = await SQLite.openDatabaseAsync('nishin.db');
 
-            const updatedTeam = await fetchTeam();
-            setTeamData(updatedTeam);
-            closeModal();
-            refreshDamage();
-        } catch (error) {
-            console.error('Erreur addCharacterToSlot: ', error);
-        }
-    };
+    // --- Lire team + persos (une seule fois)
+    const localTeam = await db.getFirstAsync('SELECT * FROM teams_local LIMIT 1');
+    if (!localTeam) throw new Error('Aucune team locale trouvée.');
 
-//  TODO juste pour dire ça a été modifié pour la sync
+    let slots: any = localTeam.slots;
+    if (typeof slots === 'string') { try { slots = JSON.parse(slots); } catch { slots = {}; } }
+
+    const characters = await db.getAllAsync('SELECT * FROM characters_local');
+    const charactersMap = Object.fromEntries(characters.map((c:any) => [c.id, c]));
+    const character = charactersMap[characterId];
+    if (!character) throw new Error('Personnage introuvable en local.');
+
+    // --- Règles métier identiques au back
+    const validSlots = ['slot1', 'slot2', 'slot3', 'slot4'];
+    if (!validSlots.includes(slot)) throw new Error('Slot invalide.');
+
+    const isCharacterInTeam = Object.values(slots).some((s:any) => getSlotId(s) === character.id);
+    if (isCharacterInTeam) throw new Error("Ce personnage est déjà dans l'équipe.");
+
+    if (character.type === 'DPS') {
+      if (!getSlotId(slots['slot1'])) slots['slot1'] = { id: character.id };
+      else throw new Error('Le slot1 (DPS) est déjà occupé !');
+    } else if (character.type === 'SUPPORT') {
+      if (slot !== 'slot1' && !getSlotId(slots[slot])) slots[slot] = { id: character.id };
+      else throw new Error('Slot invalide ou déjà pris pour un support.');
+    } else {
+      throw new Error('Type de personnage inconnu.');
+    }
+
+    // --- 1) Écrit en base (persistance offline)
+    await db.runAsync(
+      'UPDATE teams_local SET slots = ?, updated_at = ?, dirty = 1 WHERE id = ?',
+      [JSON.stringify(slots), new Date().toISOString(), localTeam.id]
+    );
+
+    // --- 2) UI immédiate : enrichis en mémoire et setState (PAS de relecture DB)
+    const enrichedSlots = enrichSlots(slots, charactersMap);
+    const fullTeam = { ...localTeam, slots: enrichedSlots };
+    // Important : s’assurer d’une nouvelle référence
+    setTeamData(JSON.parse(JSON.stringify(fullTeam)));
+    refreshDamage();
+    closeModal();
+
+    // --- 3) Optionnel : tenter la sync si online (mais l’UI est déjà à jour)
+    if (isOnline && token) {
+      try {
+        await fetch(`${API_BASE_URL}/addCharacterToSlot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ character_id: character.id, slot }),
+        });
+      } catch {
+        // on ignore : la persistance locale est OK
+      }
+    }
+  } catch (e:any) {
+    console.error('addCharacterToSlot error:', e.message);
+    Alert.alert('Erreur', e.message);
+  }
+};
+
+
 const addArtifact = async (characterId, artifactStat, slotArtifact) => {
         try {
+            const token = await AsyncStorage.getItem('userToken');
             if (slotArtifact == "slot1") artifactStat = "HP";
             else if (slotArtifact == "slot2") artifactStat = "ATK";
 
-            await saveArtifact(characterId, slotArtifact, artifactStat, '');
-
             if (isOnline) {
-                const token = await AsyncStorage.getItem('userToken');
                 await fetch(`${API_BASE_URL}/addArtifact`, {
                     method: 'POST',
                     headers: {
@@ -321,7 +282,8 @@ const addArtifact = async (characterId, artifactStat, slotArtifact) => {
 
             const updatedArtifact = await fetchArtifacts(characterId);
             setArtifactModalVisible(false);
-            fetchAndShowArtifacts();
+            // TODO : voir fetchAndShowArtifacts()
+            // fetchAndShowArtifacts();
             setArtifactsData(updatedArtifact);
             refreshDamage();
         } catch (error) {
@@ -332,14 +294,8 @@ const addArtifact = async (characterId, artifactStat, slotArtifact) => {
 
 const removeArtifact = async (characterId, slotArtifact) => {
   try {
-    console.log('🗑️ Suppression artifact:', slotArtifact);
-
-    // 1️⃣ Supprimer localement
-    await removeArtifactLocal(characterId, slotArtifact);
-
-    // 2️⃣ Supprimer côté serveur si en ligne
+    const token = await AsyncStorage.getItem('userToken');
     if (isOnline) {
-      const token = await AsyncStorage.getItem('userToken');
       await fetch(`${API_BASE_URL}/removeArtifact`, {
         method: 'DELETE',
         headers: {
@@ -353,56 +309,211 @@ const removeArtifact = async (characterId, slotArtifact) => {
       });
     }
 
-    // 3️⃣ Recharger les artifacts
     const updatedArtifacts = await fetchArtifacts(characterId);
     setArtifactsData(updatedArtifacts);
     setArtifactModalVisible(false);
-refreshDamage();
+    refreshDamage();
   } catch (error) {
     console.error("❌ Erreur removeArtifact:", error);
   }
 };
 
 
-//  TODO juste pour dire ça a été modifié pour la sync
-const removeCharacter = async (characterId, slot) => {
+const initializeLocalData = async () => {
+  const db = await SQLite.openDatabaseAsync('nishin.db');
+  console.log('🚀 Initialisation locale des données...');
+
+  try {
+    const localTeam = await db.getFirstAsync('SELECT * FROM teams_local LIMIT 1');
+
+    if (localTeam) {
+      console.log('📂 Team locale trouvée :', localTeam.id);
+
+      const characters = await db.getAllAsync('SELECT * FROM characters_local');
+      const charactersMap = Object.fromEntries(characters.map(c => [c.id, c]));
+
+      // 🔍 1. Parser proprement les slots
+      let slotsData = localTeam.slots;
+      if (typeof slotsData === 'string') {
         try {
-            await removeTeamSlot(slot);
-
-            if (isOnline) {
-                const token = await AsyncStorage.getItem('userToken');
-                await fetch(`${API_BASE_URL}/removeCharacterFromSlot`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        slot: slot,
-                        character_id: characterId
-                    })
-                });
-            }
-
-            const updatedTeam = await fetchTeam();
-            setTeamData(updatedTeam);
-            refreshDamage();
-        } catch (error) {
-            console.error("Erreur dans le removeCharacter: ", error);
+          slotsData = JSON.parse(slotsData);
+        } catch (e) {
+          console.warn('⚠️ Erreur de parsing JSON des slots:', e);
+          slotsData = {};
         }
+      }
+
+      // 🔍 2. Reconstruire chaque slot avec les bons persos
+      const enrichedSlots: Record<string, any> = {};
+
+      for (const [slotName, slotValue] of Object.entries(slotsData)) {
+        if (!slotValue) {
+          enrichedSlots[slotName] = null;
+          continue;
+        }
+
+        // Supporte les deux formats : id direct ou objet { _id }
+        const charId =
+          typeof slotValue === 'string'
+            ? slotValue
+            : slotValue._id ?? slotValue.id;
+
+        const fullChar = charactersMap[charId] || null;
+        enrichedSlots[slotName] = fullChar;
+      }
+
+      const fullTeam = {
+        ...localTeam,
+        slots: enrichedSlots,
+      };
+
+      setTeamData(fullTeam);
+      console.log('✅ Team enrichie :', fullTeam);
+    } else {
+      console.log('⚠️ Aucune team locale trouvée');
+      setTeamData(null);
+    }
+
+    // Charger les personnages locaux
+    const localCharacters = await db.getAllAsync('SELECT * FROM characters_local');
+
+    if (localCharacters.length > 0) {
+      console.log(`📦 ${localCharacters.length} personnages locaux chargés`);
+      setCharactersLocal(localCharacters);
+    } else {
+      console.log('⚠️ Aucun personnage local trouvé');
+      setCharactersLocal([]);
+    }
+
+    console.log('✅ Initialisation locale terminée');
+  } catch (error) {
+    console.error('❌ Erreur initialisation locale :', error.message);
+  }
+};
+
+
+const fetchLocalTeamData = async () => {
+  try {
+    const db = await SQLite.openDatabaseAsync('nishin.db');
+    console.log('🚀 Fetch locale des données de team...');
+
+    const localTeam = await db.getFirstAsync('SELECT * FROM teams_local LIMIT 1');
+    if (!localTeam) {
+      console.log('⚠️ Aucune team locale trouvée');
+      setTeamData(null);
+      return null;
+    }
+
+    console.log('📂 Team locale trouvée :', localTeam.id);
+
+    // Charger les persos locaux
+    const characters = await db.getAllAsync('SELECT * FROM characters_local');
+    const charactersMap = Object.fromEntries(characters.map(c => [c.id, c]));
+
+    // 🔍 Parser les slots proprement
+    let slotsData: any = {};
+    if (localTeam.slots) {
+      try {
+        slotsData = typeof localTeam.slots === 'string'
+          ? JSON.parse(localTeam.slots)
+          : localTeam.slots;
+      } catch (err) {
+        console.warn('⚠️ Erreur parsing JSON des slots :', err);
+        slotsData = {};
+      }
+    }
+
+    // 🔍 Reconstruire les slots enrichis
+    const enrichedSlots: Record<string, any> = {};
+    for (const [slotName, slotValue] of Object.entries(slotsData)) {
+      if (!slotValue) {
+        enrichedSlots[slotName] = null;
+        continue;
+      }
+
+      // Toujours utiliser .id (pas _id)
+      const charId =
+        typeof slotValue === 'string' ? slotValue : slotValue.id;
+
+      enrichedSlots[slotName] = charactersMap[charId] || null;
+    }
+
+    const fullTeam = {
+      ...localTeam,
+      slots: enrichedSlots,
     };
 
-async function getBasicDamage() {
-        try {
-            const token = await AsyncStorage.getItem('userToken');
+    console.log('✅ Team enrichie prête :', fullTeam);
+    setTeamData(fullTeam);
+    return fullTeam;
+  } catch (error: any) {
+    console.error('❌ Erreur fetchLocalTeamData :', error.message);
+    setTeamData(null);
+    return null;
+  }
+};
 
+
+const removeCharacter = async (characterId: string, slot: string) => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    const db = await SQLite.openDatabaseAsync('nishin.db');
+
+    const localTeam = await db.getFirstAsync('SELECT * FROM teams_local LIMIT 1');
+    if (!localTeam) throw new Error('Aucune team locale trouvée.');
+
+    let slots:any = localTeam.slots;
+    if (typeof slots === 'string') { try { slots = JSON.parse(slots); } catch { slots = {}; } }
+
+    // Rien dans le slot ? on sort proprement
+    const currentId = getSlotId(slots[slot]);
+    if (!currentId) return;
+
+    // Si tu veux vraiment vérifier que c’est bien ce perso :
+    if (characterId && currentId !== characterId) {
+      console.warn('Le slot contient un autre personnage.');
+      return;
+    }
+
+    // 1) Persist local
+    slots[slot] = null;
+    await db.runAsync(
+      'UPDATE teams_local SET slots = ?, updated_at = ?, dirty = 1 WHERE id = ?',
+      [JSON.stringify(slots), new Date().toISOString(), localTeam.id]
+    );
+
+    // 2) UI immédiate sans relecture
+    const characters = await db.getAllAsync('SELECT * FROM characters_local');
+    const charactersMap = Object.fromEntries(characters.map((c:any) => [c.id, c]));
+    const enrichedSlots = enrichSlots(slots, charactersMap);
+    const fullTeam = { ...localTeam, slots: enrichedSlots };
+    setTeamData(JSON.parse(JSON.stringify(fullTeam)));
+    refreshDamage();
+
+    // 3) Sync côté serveur si online (optionnelle)
+    if (isOnline && token) {
+      try {
+        await fetch(`${API_BASE_URL}/removeCharacterFromSlot`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ slot, character_id: characterId }),
+        });
+      } catch { /* ignore offline */ }
+    }
+  } catch (e:any) {
+    console.error('removeCharacter error:', e.message);
+  }
+};
+
+
+    async function getBasicDamage() {
+        try {
+            const token = await AsyncStorage.getItem('userToken');  
             const response = await fetch(`${API_BASE_URL}/simulateBasicDamageForDPS`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache',
                     },
                 });
 
@@ -414,17 +525,14 @@ async function getBasicDamage() {
     };
 
 
-async function getArtifactDamage() {
+    async function getArtifactDamage() {
         try {
             const token = await AsyncStorage.getItem('userToken');
-
             const response = await fetch(`${API_BASE_URL}/simulateDamageWithArtifact`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache',
                     },
                 });
 
@@ -435,10 +543,9 @@ async function getArtifactDamage() {
         }
     };
 
-async function getDamage() {
+    async function getDamage() {
         try {
             const token = await AsyncStorage.getItem('userToken');
-
             const response = await fetch(`${API_BASE_URL}/simulateDamageForDPS`, {
                 method: 'GET',
                 headers: {
@@ -467,96 +574,98 @@ async function getDamage() {
       }, []);
 
 
-        useEffect(() => {
-            Alert.alert('Debug', '🎯 Installation listener NetInfo');
+    // TODO : a voir si on a besoin de ça ? c'est pour les alertes voir si on a de la connection ou pas et setIsOnline
+    useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(async (state) => {
+        if (state.isConnected) {
+        console.log('🌐 Reconnexion détectée : synchro auto...');
 
-            NetInfo.fetch().then(state => {
-                Alert.alert('Debug', `📶 État initial: ${state.isConnected}`);
-                setIsOnline(state.isConnected ?? true);
-            });
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) return;
 
-            const unsubscribe = NetInfo.addEventListener(state => {
-                Alert.alert('Debug', `📶 CHANGEMENT: ${state.isConnected}`);
-                setIsOnline(state.isConnected ?? true);
-            });
+        try {
+            // await pushChanges(token); // envoie d’abord les modifs locales
+            await pullChangesCharacters(token);
+            await pullChangesTeams(token);
+            console.log('✅ Synchro automatique réussie.');
+        } catch (err) {
+            console.error('❌ Erreur de synchro automatique :', err.message);
+        }
+        }
+    });
 
-            return () => unsubscribe();
-        }, []);
+    return () => unsubscribe();
+    }, []);
 
-        useEffect(() => {
-            const initialize = async () => {
-                try {
-                    console.log('🚀 Initialisation...');
+    // TODO : useEffect de nos test ! provient de index sur discord
+    // useEffect(() => {
+    //     (async () => {
+    //         const token = await AsyncStorage.getItem('userToken');
+    //         try {
+    //             // await deleteDatabase();
+    //             // await setupDatabase();
+    //             // await testDatabaseConnection();
+    //             // await checkTables();
+    //             // await describeTable();
+    //             // await testInsertCharacter();
+    //             await maybeRunFullSync(token);
 
-                    await initDB();
-                    console.log('✅ DB initialisée');
+    //             await pullChangesCharacters(token);
+    //             await dumpCharacters();
 
-                    if (isOnline) {
-                        const baseCharacters = await loadBaseCharacters();
-                        console.log(`✅ ${baseCharacters.length} personnages synchronisés depuis API`);
-                        setCharactersLocal(baseCharacters);
-                    }
+    //             await pullChangesTeams(token);
+    //             await dumpTeams();
 
-                    const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-                    const localChars = await db.getAllAsync('SELECT * FROM characters_local');
+    //             await initializeLocalData();
+    //             // await fetchTeam();
+    //             // await fetchCharacters();
+    //         } catch (err: any) {
+    //             console.error('Erreur de synchronisation initiale:', err.message);
+    //         }
+    //     })();
+    // }, []);
 
-                    setCharactersLocal(localChars);
-
-                    const teamData = await fetchTeam();
-                    setTeamData(teamData);
-
-                    console.log('✅ Initialisation terminée');
-
-                } catch (error) {
-                    console.error('❌ Erreur initialisation:', error);
-                }
-            };
-
-            initialize();
-        }, []);
-
-
-useEffect(() => {
-    const syncOnReconnect = async () => {
-        if (isOnline) {
-            console.log('🌐 Connexion rétablie, synchronisation...');
+    useEffect(() => {
+        (async () => {
+            const token = await AsyncStorage.getItem('userToken');
 
             try {
-                await loadBaseCharacters();
+            // await deleteDatabase();
+            // await setupDatabase();
+            console.log('🌐 Synchro initiale...');
+            await maybeRunFullSync(token);
+            await pullChangesCharacters(token);
+            await pullChangesTeams(token);
 
-                const db = await SQLite.openDatabaseAsync('genshin_nishin.db');
-                const localChars = await db.getAllAsync('SELECT * FROM characters_local');
 
-                setCharactersLocal(localChars.map(char => ({
-                    id: char.id,
-                    name: char.name,
-                    type: char.type,
-                    vision: char.vision,
-                    base_atk: char.base_atk,
-                    base_hp: char.base_hp,
-                    elemental_mastery: char.elemental_mastery,
-                    image: char.image
-                })));
-
-                console.log('✅ Données mises à jour après reconnexion');
-
-            } catch (error) {
-                console.error('❌ Erreur sync reconnexion:', error);
+            console.log('💾 Rechargement des données locales...');
+            await initializeLocalData();
+            } catch (err) {
+            console.error('❌ Erreur de synchronisation initiale:', err.message);
             }
+        })();
+        }, []);
+
+    useEffect(() => {
+    const interval = setInterval(async () => {
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) return;
+
+        const state = await NetInfo.fetch();
+        if (state.isConnected) {
+        console.log('🕒 Synchro périodique...');
+        try {
+            // await pushChanges(token);
+            await pullChangesCharacters(token);
+            await pullChangesTeams(token);
+        } catch (err) {
+            console.warn('⚠️ Synchro périodique échouée:', err.message);
         }
-    };
-
-    const notOnlineTest = async () => {
-        if (!isOnline) {
-            const testCharacterByFetch = await fetchCharacters();
-            setCharactersLocal(testCharacterByFetch);
         }
+    }, 5 * 60 * 1000); // toutes les 5 minutes
 
-    };
-
-    syncOnReconnect();
-    notOnlineTest();
-}, [isOnline]);
+    return () => clearInterval(interval);
+    }, []);
 
 
 
@@ -567,6 +676,7 @@ useEffect(() => {
             setModalVisible(true);
         } else {
             setModalVisible(false);
+            // TODO : voir pour cette fonction en dessous
             fetchAndShowArtifacts(slotData.id, slot);
         }
       };
@@ -577,44 +687,11 @@ useEffect(() => {
         setSelectedSlotData(null);
       };
 
-//   SYNC encore
- const handleSync = async () => {
-     try {
-         setSyncStatus('🔄 Synchro...');
 
-         // ✅ Récupérer le token
-         const token = await AsyncStorage.getItem('userToken');
-
-         if (!token) {
-             setSyncStatus('❌ Non connecté');
-             setTimeout(() => setSyncStatus(''), 2000);
-             return;
-         }
-
-         // ✅ Passer le token à syncWithServer
-         const result = await syncWithServer(token);
-
-         setSyncStatus(result.success ? '✅ Synchronisé' : '❌ Échec');
-
-         if (result.success) {
-             // ✅ Recharger les données
-             const updatedTeam = await fetchTeam();
-             setTeamData(updatedTeam);
-         }
-
-         setTimeout(() => setSyncStatus(''), 2000);
-
-     } catch (error) {
-         console.error('❌ Erreur handleSync:', error);
-         setSyncStatus('❌ Erreur');
-         setTimeout(() => setSyncStatus(''), 2000);
-     }
- };
-
-
-    const handleLongPress = (characterId, slot, teamData) => {
-        console.log('tu es dans lautre handlelongpress');
-        removeCharacter(characterId, slot, teamData);
+// TODO : check pour teamData apparemment y'a pas besoin ?
+    const handleLongPress = (characterId, slot) => {
+        // TODO : visiblement removeCharacter n'a pas besoin de teamData en paramètre
+        removeCharacter(characterId, slot);
     };
 
     const handleAddArtifact = (slotArtifact) => {
@@ -623,6 +700,7 @@ useEffect(() => {
         setSelectedStat('');
     };
 
+    // TODO : fonction suspicieuse
   const fetchAndShowArtifacts = async (characterId, slot) => {
       try {
           const artifacts = await fetchArtifacts(characterId);
@@ -639,7 +717,7 @@ useEffect(() => {
                   <View style={styles.statusBadge}>
                     <Text style={styles.statusText}>
                       {!isOnline && '📡 Hors ligne'}
-                      {isOnline && syncStatus}
+                      {isOnline && 'En ligne'}
                     </Text>
                   </View>
 
@@ -650,10 +728,10 @@ useEffect(() => {
         <View style={{ marginHorizontal: 15}}>
         <Text style={styles.sectionLabel}>Équipe</Text>
         <View style={styles.teamRow}>
-            <SlotCard character={teamData?.slots?.slot1} slot='slot1' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
-            <SlotCard character={teamData?.slots?.slot2} slot='slot2' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
-            <SlotCard character={teamData?.slots?.slot3} slot='slot3' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
-            <SlotCard character={teamData?.slots?.slot4} slot='slot4' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard charactersLocal={teamData?.slots?.slot1} slot='slot1' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard charactersLocal={teamData?.slots?.slot2} slot='slot2' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard charactersLocal={teamData?.slots?.slot3} slot='slot3' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
+            <SlotCard charactersLocal={teamData?.slots?.slot4} slot='slot4' onSlotPress={handleSlotPress} characterImages={characterImages} onLongPress={handleLongPress}/>
         </View>
 
 
@@ -680,7 +758,7 @@ useEffect(() => {
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({item}) => (
                             <View style={styles.containerImage}>
-                                <Pressable onPress={() => addCharacterToSlot(item.id, selectedSlot)}>
+                                <Pressable onPress={() => addCharacterToSlot(item.id.toString(), selectedSlot)}>
                                     <Image
                                         source={characterImages[item.name?.toLowerCase()]}
                                         style={styles.characterImage}
@@ -775,19 +853,19 @@ useEffect(() => {
 
                 <View style={styles.modalButtons}>
                     <Pressable
-                        style={[styles.button, styles.cancelButton]}
+                        style={[styles.cancelButton]}
                         onPress={() => setArtifactModalVisible(false)}
                     >
                         <Text style={{ color: '#d66', fontWeight: '600'}}>Annuler</Text>
                     </Pressable>
                     <Pressable
-                        style={[styles.button, styles.confirmButton]}
+                        style={[styles.confirmButton]}
                         onPress={() => addArtifact(selectedSlotData.id, selectedStat, selectedSlotForPicker)}
                     >
                         <Text style={{ color: '#fff', fontWeight: '600'}}>Ajouter</Text>
                     </Pressable>
                     <Pressable
-                        style={[styles.button, styles.deleteButton]}
+                        style={[styles.deleteButton]}
                         onPress={() => removeArtifact(selectedSlotData.id, selectedSlotForPicker)}
                     >
                         <Text style={{ color: '#fff', fontWeight: '600'}}>Supprimer</Text>
@@ -835,10 +913,9 @@ useEffect(() => {
          </TouchableOpacity>
 
 
-{/* 🆕 Bouton de synchro manuelle */}
+        {/* fonction du onPress à refaire avec la nouveauté */}
             <TouchableOpacity
               style={[styles.syncButton, !isOnline && styles.syncButtonDisabled]}
-              onPress={handleSync}
               disabled={!isOnline}
             >
               <Text style={styles.syncButtonText}>
@@ -875,25 +952,26 @@ function CircleWithText({ text }: { text: string }) {
   );
 }
 
-function SlotCard({character, slot, onSlotPress, onLongPress, characterImages, teamData}) {
+function SlotCard({charactersLocal, slot, onSlotPress, onLongPress, characterImages, teamData}) {
   const handlePress = () => {
       if (onSlotPress) {
-        onSlotPress(slot, character);
+        onSlotPress(slot, charactersLocal);
       }
     };
   const handleLong = () => {
-    if (onLongPress) {
-        onLongPress(character.id, slot, teamData);
+    if (charactersLocal && onLongPress) {
+        onLongPress(charactersLocal.id, slot, teamData);
     }
   }
+
   return (
     <TouchableOpacity style={styles.slotCard} onPress={handlePress} onLongPress={handleLong}>
           <Image
-                  source={characterImages[character?.name.toLowerCase()] || characterImages.plus}
+                  source={characterImages[charactersLocal?.name.toLowerCase()] || characterImages.plus}
                   style={styles.characterImageInSlot}
                 />
-          <Text style={styles.slot}>{character?.name ?? ''}</Text>
-                <Text style={styles.role}>{character?.type}</Text>
+          <Text style={styles.slot}>{charactersLocal?.name ?? ''}</Text>
+                <Text style={styles.role}>{charactersLocal?.type}</Text>
     </TouchableOpacity>
   );
 }
