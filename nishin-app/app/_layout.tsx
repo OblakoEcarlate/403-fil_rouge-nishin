@@ -1,27 +1,17 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { initDB } from '../services/database';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function RootLayout() {
-  const [isLoggedIn, setIsLoggedIn] = useState(null);
   const segments = useSegments();
   const router = useRouter();
+  const { checkAuth, isLoggedIn } = useAuth();
 
   useEffect(() => {
     checkAuth();
-    // initDB();
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      setIsLoggedIn(!!token);
-    } catch (error) {
-      console.error('Erreur checkAuth:', error);
-      setIsLoggedIn(false);
-    }
-  };
 
   useEffect(() => {
     if (isLoggedIn === null) return;
