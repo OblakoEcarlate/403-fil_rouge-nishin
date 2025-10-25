@@ -164,9 +164,7 @@ class SimulationController extends Controller
     }
 
 
-
-// PRIVATE ------------------------------
-    private function getBuff(Request $request)
+    public function getBuff(Request $request)
     {
         $slots = ['slot2', 'slot3', 'slot4'];
         $buffs = [];
@@ -198,7 +196,7 @@ class SimulationController extends Controller
     /**
      * Application d'un buff
      */
-    private function applyBuff(Request $request)
+    public function applyBuff(Request $request)
     {
         $dps = $this->getSlot1CharacterOfTeam($request);
 
@@ -248,7 +246,7 @@ class SimulationController extends Controller
     /*
      * Calcule les dégats de un ou plusieurs artéfact pour le DPS UNIQUEMENT
      */
-    private function calculateATKArtifact(Request $request): int
+    public function calculateATKArtifact(Request $request): int
     {
         $teamCharacter = $this->getSlot1CharacterOfTeam($request);
 
@@ -292,7 +290,7 @@ class SimulationController extends Controller
         return intval($totalArtifactBonus);
     }
 
-    private function getCharacterFromSlot(Request $request, string $slot)
+    public function getCharacterFromSlot(Request $request, string $slot)
     {
         $team = $request->user()->team;
 
@@ -309,7 +307,7 @@ class SimulationController extends Controller
         return $character;
     }
 
-    private function getSlot1CharacterOfTeam(Request $request)
+    public function getSlot1CharacterOfTeam(Request $request)
     {
         try {
             $character = $this->getCharacterFromSlot($request, 'slot1');

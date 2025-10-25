@@ -20,6 +20,11 @@ class TeamController extends Controller
         return $characters;
     }
 
+    protected function findCharacterById(string $id)
+    {
+        return Character::find($id);
+    }
+
 
     /*
     * Ajout d'un personnage dans un slot
@@ -29,8 +34,9 @@ class TeamController extends Controller
         // ✅ VALIDATION DE L'INPUT
         $validSlots = ['slot1', 'slot2', 'slot3', 'slot4'];
         $slot = $request->slot;
-        $team = $this->getTeamForBackend($request);
-        $character = Character::find($request->character_id);
+        $team = $this->getTeam($request);
+        // $character = Character::find($request->character_id);
+        $character = $this->findCharacterById($request->character_id);
 
         if (!$character) {
             return response()->json(['error' => 'Personnage introuvable'], 404);
