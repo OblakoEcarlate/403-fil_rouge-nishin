@@ -53,7 +53,7 @@ class FakeDataBuilder
     /**
      * Crée un personnage DPS de base.
      */
-    public function dps(int $baseAtk, int $multiplier, int $em = 0): array
+    public function dps(int $baseAtk, int $multiplier, int $em = 0)
     {
         return [
             'type' => 'DPS',

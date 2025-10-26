@@ -56,6 +56,7 @@ class SimulationIntegrationTest extends TestCase
         $this->controller->shouldReceive('getSlot1CharacterOfTeam')->andReturn($dps);
 
         $result = $this->controller->simulateBasicDamageForDPS($this->request);
+
         $this->assertEquals(200, $result);
     }
 
@@ -185,7 +186,8 @@ class SimulationIntegrationTest extends TestCase
         $this->controller->shouldReceive('getSlot1CharacterOfTeam')->andReturn($support);
 
         $response = $this->controller->simulateBasicDamageForDPS($this->request);
-        $this->assertTrue($response->getData(true)['success'] === false);
+
+        $this->assertEquals(500, $response->status());
     }
 
     /** 9️⃣ Cas d’erreur : slot1 vide */

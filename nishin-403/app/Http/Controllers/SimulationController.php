@@ -28,7 +28,7 @@ class SimulationController extends Controller
 
                 return intval($baseDMG);
 // CAS D'ERREUR ------------------
-            } else if ($character['type'] == "SUPPORT") {
+            } else if ($character->type == "SUPPORT") {
                 return response()->json([
                     'success' => false,
                     'message' => "Erreur : Le calcul est impossible, c'est un personnage de type SUPPORT"
