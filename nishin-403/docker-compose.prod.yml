@@ -10,7 +10,7 @@ services:
         container_name: api
         working_dir: /var/www/html
         ports:
-            - "8022:8000"
+            - "8022:8022"
         volumes:
             - .:/var/www/html
             - composer-cache:/tmp
