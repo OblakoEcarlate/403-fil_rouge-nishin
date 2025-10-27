@@ -1,0 +1,59 @@
+volumes:
+  mongo-test-data:
+  composer-cache:
+
+services:
+  # ------------------------------
+  # 🧩 Base MongoDB dédiée aux tests
+  # ------------------------------
+  mongo-test:
+    image: mongo:7
+    container_name: mongo-test
+    ports:
+      - "27018:27017"  # port différent pour ne pas entrer en conflit avec ton mongo de dev
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: genshin_test
+    volumes:
+      - mongo-test-data:/data/db
+    command: mongod --auth
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test -u root -p example --authenticationDatabase admin --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ------------------------------
+  # 🚀 Application Laravel (mode test)
+  # ------------------------------
+  app-test:
+    build:
+      context: .
+    container_name: api-test
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - composer-cache:/tmp
+    depends_on:
+      - mongo-test
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: true
+      APP_KEY: base64:SomeFakeAppKeyForTesting==
+      DB_CONNECTION: mongodb
+      DB_HOST: mongo-test
+      DB_PORT: 27017
+      DB_DATABASE: genshin_test
+      DB_USERNAME: root
+      DB_PASSWORD: example
+    user: "root"
+    command: >
+      sh -c "
+      chown -R www-data:www-data storage bootstrap &&
+      chmod -R 775 storage bootstrap &&
+      php artisan optimize:clear &&
+      php artisan test --env=testing
+      "
+    restart: "no"
