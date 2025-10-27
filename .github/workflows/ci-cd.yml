@@ -36,6 +36,7 @@ jobs:
           coverage: none
 
       - name: Prepare writable directories
+        working-directory: ./nishin-403
         run: |
           echo "📁 Préparation des dossiers Laravel..."
           mkdir -p storage/logs \
