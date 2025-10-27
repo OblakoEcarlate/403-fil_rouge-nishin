@@ -39,6 +39,7 @@ jobs:
         uses: ramsey/composer-install@v3
         with:
           composer-options: --no-interaction --prefer-dist
+          working-directory: ./nishin-403
 
       - name: Prepare app
         run: |
