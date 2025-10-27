@@ -116,6 +116,18 @@ jobs:
           echo "🔧 Preparing production environment..."
           cp .env.example .env
           php -r "file_put_contents('.env', preg_replace('/^APP_ENV=.*/m', 'APP_ENV=production', file_get_contents('.env')));"
+          
+      - name: Prepare writable directories
+        working-directory: ./nishin-403
+        run: |
+          echo "📁 Préparation des dossiers Laravel..."
+          mkdir -p storage/logs \
+                  storage/framework/cache \
+                  storage/framework/sessions \
+                  storage/framework/views \
+                  bootstrap/cache
+          touch storage/logs/laravel.log
+          chmod -R 775 storage bootstrap
 
       - name: Build & deploy Docker containers
         working-directory: ./nishin-403
