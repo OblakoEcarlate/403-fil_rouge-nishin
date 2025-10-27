@@ -1,0 +1,79 @@
+name: CI/CD Nishin
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+        options: >-
+          --health-cmd="mongosh --username root --password example --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v3
+        with:
+          php-version: '8.3'
+          extensions: mongodb, mbstring, bcmath, xml
+          ini-values: post_max_size=256M, max_execution_time=300
+          coverage: none
+
+      - name: Install Composer deps (cached)
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: --no-interaction --prefer-dist
+
+      - name: Prepare app
+        run: |
+          [ -f .env ] || cp .env.example .env
+          php artisan key:generate --ansi
+          php artisan optimize:clear
+
+      - name: Wait for MongoDB (auth)
+        run: |
+          for i in {1..60}; do
+            if mongosh --host 127.0.0.1 --port 27017 -u root -p example --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' --quiet; then
+              echo "MongoDB ready"; exit 0; fi
+            echo "Waiting for MongoDB..."
+            sleep 1
+          done
+          echo "MongoDB did not become ready" && exit 1
+
+      - name: Run tests
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mongodb
+          DB_HOST: 127.0.0.1
+          DB_PORT: "27017"
+          DB_DATABASE: genshin_test
+          DB_USERNAME: root
+          DB_PASSWORD: example
+        run: |
+          php artisan test --env=testing --verbose \
+            --log-junit build/junit.xml || EXIT=$?
+          mkdir -p build && echo "${EXIT:-0}" > build/exitcode
+          exit "${EXIT:-0}"
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit
+          path: build/junit.xml
