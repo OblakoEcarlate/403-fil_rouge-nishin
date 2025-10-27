@@ -54,6 +54,7 @@ jobs:
           working-directory: ./nishin-403
 
       - name: Prepare app
+        working-directory: ./nishin-403
         run: |
           [ -f .env ] || cp .env.example .env
           php artisan key:generate --ansi
@@ -70,6 +71,7 @@ jobs:
           echo "MongoDB did not become ready" && exit 1
 
       - name: Run tests
+        working-directory: ./nishin-403
         env:
           APP_ENV: testing
           DB_CONNECTION: mongodb
