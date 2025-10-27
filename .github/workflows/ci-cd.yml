@@ -35,6 +35,17 @@ jobs:
           ini-values: post_max_size=256M, max_execution_time=300
           coverage: none
 
+      - name: Prepare writable directories
+        run: |
+          echo "📁 Préparation des dossiers Laravel..."
+          mkdir -p storage/logs \
+                  storage/framework/cache \
+                  storage/framework/sessions \
+                  storage/framework/views \
+                  bootstrap/cache
+          touch storage/logs/laravel.log
+          chmod -R 775 storage bootstrap
+
       - name: Install Composer deps (cached)
         uses: ramsey/composer-install@v3
         with:
