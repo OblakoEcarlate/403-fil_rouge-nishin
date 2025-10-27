@@ -101,10 +101,115 @@ jobs:
             --log-junit build/junit.xml || EXIT=$?
           mkdir -p build && echo "${EXIT:-0}" > build/exitcode
           exit "${EXIT:-0}"
+  
+  deploy:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && needs.build_and_test.result == 'success'
 
-      - name: Upload JUnit report
-        if: always()
-        uses: actions/upload-artifact@v4
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+        options: >-
+          --health-cmd="mongosh --username root --password example --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
         with:
-          name: junit
-          path: build/junit.xml
+          php-version: '8.3'
+          extensions: mongodb, mbstring, bcmath, xml
+          ini-values: post_max_size=256M, max_execution_time=300
+
+      - name: Prepare writable directories
+        working-directory: ./nishin-403
+        run: |
+          echo "📁 Préparation des dossiers Laravel..."
+          mkdir -p storage/logs \
+                  storage/framework/cache \
+                  storage/framework/sessions \
+                  storage/framework/views \
+                  bootstrap/cache
+          touch storage/logs/laravel.log
+          chmod -R 775 storage bootstrap
+
+      - name: Install Composer deps
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: --no-interaction --prefer-dist
+          working-directory: ./nishin-403
+
+      - name: Prepare .env for deploy (local seeding)
+        working-directory: ./nishin-403
+        run: |
+          [ -f .env ] || cp .env.example .env
+          php -r "file_put_contents('.env', preg_replace('/^APP_ENV=.*/m', 'APP_ENV=production', file_get_contents('.env')));"
+        env:
+          DB_CONNECTION: mongodb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 27017
+          DB_DATABASE: nishin-403
+          DB_USERNAME: root
+          DB_PASSWORD: example
+
+      - name: Install mongosh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+          wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-mongosh
+
+      - name: Wait for MongoDB (auth) - deploy
+        run: |
+          for i in {1..60}; do
+            if mongosh --host 127.0.0.1 --port 27017 -u root -p example --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' --quiet; then
+              echo "MongoDB ready"; exit 0; fi
+            echo "Waiting for MongoDB..."
+            sleep 1
+          done
+          echo "MongoDB did not become ready" && exit 1
+
+      - name: Generate app key & optimize
+        working-directory: ./nishin-403
+        run: |
+          php artisan key:generate --ansi
+          php artisan config:cache
+          php artisan route:cache || true
+        env:
+          DB_CONNECTION: mongodb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 27017
+          DB_DATABASE: nishin-403
+          DB_USERNAME: root
+          DB_PASSWORD: example
+
+      - name: Run migrations & seed (nishin-403)
+        working-directory: ./nishin-403
+        env:
+          APP_ENV: production
+          DB_CONNECTION: mongodb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 27017
+          DB_DATABASE: nishin-403
+          DB_USERNAME: root
+          DB_PASSWORD: example
+        run: |
+          php artisan migrate --force --no-interaction || true
+          php artisan db:seed --force
+
+      - name: Deployment step (placeholder)
+        working-directory: ./nishin-403
+        run: |
+          echo "✅ Déploiement local effectué et base nishin-403 seedée."
