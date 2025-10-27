@@ -97,7 +97,7 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: example
         run: |
-          php artisan test --env=testing --verbose \
+          php artisan test --env=testing \
             --log-junit build/junit.xml || EXIT=$?
           mkdir -p build && echo "${EXIT:-0}" > build/exitcode
           exit "${EXIT:-0}"
