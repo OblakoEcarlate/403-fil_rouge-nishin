@@ -55,6 +55,13 @@ jobs:
 
       - name: Prepare app
         working-directory: ./nishin-403
+        env:
+          DB_CONNECTION: mongodb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 27017
+          DB_DATABASE: genshin_test
+          DB_USERNAME: root
+          DB_PASSWORD: example
         run: |
           [ -f .env ] || cp .env.example .env
           php artisan key:generate --ansi
