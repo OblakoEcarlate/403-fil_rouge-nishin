@@ -104,8 +104,9 @@ jobs:
   
   deploy:
     needs: build_and_test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && needs.build_and_test.result == 'success'
+    runs-on: self-hosted
+
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.build_and_test.result == 'success'
 
     services:
       mongo:
