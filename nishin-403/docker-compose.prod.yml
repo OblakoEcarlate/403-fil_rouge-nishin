@@ -10,7 +10,7 @@ services:
         container_name: api
         working_dir: /var/www/html
         ports:
-            - "8022:8022"
+            - "8022:8000"
         volumes:
             - composer-cache:/tmp
         environment:
@@ -20,9 +20,9 @@ services:
             DB_CONNECTION: ${DB_CONNECTION:-mongodb}
             DB_HOST: ${DB_HOST:-mongo}
             DB_PORT: ${DB_PORT:-27017}
-            DB_DATABASE: ${DB_DATABASE:-nishin_403}
+            DB_DATABASE: ${DB_DATABASE:-laravel}
             DB_USERNAME: ${DB_USERNAME:-root}
-            DB_PASSWORD: ${DB_PASSWORD:-root}
+            DB_PASSWORD: ${DB_PASSWORD:-example}
         depends_on:
             - mongo
         restart: unless-stopped
@@ -46,8 +46,8 @@ services:
             - "27022:27017"
         environment:
             MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME:-root}
-            MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-root}
-            MONGO_INITDB_DATABASE: ${DB_DATABASE:-nishin_403}
+            MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-example}
+            MONGO_INITDB_DATABASE: ${DB_DATABASE:-laravel}
         volumes:
             - mongo-data:/data/db
         command: mongod --auth
