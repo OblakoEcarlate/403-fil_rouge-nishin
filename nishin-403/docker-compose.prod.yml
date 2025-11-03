@@ -20,9 +20,9 @@ services:
             DB_CONNECTION: ${DB_CONNECTION:-mongodb}
             DB_HOST: ${DB_HOST:-mongo}
             DB_PORT: ${DB_PORT:-27017}
-            DB_DATABASE: ${DB_DATABASE:-laravel}
+            DB_DATABASE: ${DB_DATABASE:-nishin_403}
             DB_USERNAME: ${DB_USERNAME:-root}
-            DB_PASSWORD: ${DB_PASSWORD:-example}
+            DB_PASSWORD: ${DB_PASSWORD:-root}
         depends_on:
             - mongo
         restart: unless-stopped
