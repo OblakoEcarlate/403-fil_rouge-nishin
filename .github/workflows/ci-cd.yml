@@ -115,7 +115,6 @@ jobs:
         run: |
           echo "🔧 Preparing production environment..."
           cp .env.example .env
-          php -r "file_put_contents('.env', preg_replace('/^APP_ENV=.*/m', 'APP_ENV=production', file_get_contents('.env')));"
           
       - name: Prepare writable directories
         working-directory: ./nishin-403
@@ -134,6 +133,8 @@ jobs:
         run: |
           echo "🚀 Building and deploying Docker containers..."
           docker compose -f docker-compose.prod.yml up -d --build
+          echo "✅ Docker containers are up and running:"
+          docker ps
 
       - name: Run seeds
         working-directory: ./nishin-403
