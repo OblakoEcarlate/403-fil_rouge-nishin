@@ -132,8 +132,8 @@ jobs:
         working-directory: ./nishin-403
         run: |
           echo "🚀 User"
-          export UID=$(id -u)
-          export GID=$(id -g)
+          export LOCAL_UID=$(id -u)
+          export LOCAL_GID=$(id -g)
           echo "🚀 Building and deploying Docker containers..."
           docker compose -f docker-compose.prod.yml up -d --build
 
