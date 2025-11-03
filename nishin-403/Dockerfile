@@ -33,7 +33,7 @@ COPY . .
 # Installer les dépendances PHP (sans dev pour build)
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-RUN chown -R 1000:1000 storage bootstrap
+# RUN chown -R 1000:1000 storage bootstrap
 
 # ==============================
 # 🔒 Lancer sous www-data
