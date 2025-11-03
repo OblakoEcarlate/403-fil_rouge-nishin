@@ -142,6 +142,13 @@ jobs:
 
       - name: Run seeds
         working-directory: ./nishin-403
+        env:
+          DB_HOST: 0.0.0.0
+          DB_PORT: 27022
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          DB_AUTH_SOURCE: admin
         run: |
           echo "🌱 Running seeds..."
-          docker exec api php artisan db:seed --force || true
+          php artisan db:seed --force
+
