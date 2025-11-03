@@ -108,7 +108,12 @@ jobs:
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && needs.build_and_test.result == 'success'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 🧹 Clean workspace before checkout
+        run: |
+          echo "🧹 Cleaning workspace manually before checkout..."
+          sudo rm -rf $GITHUB_WORKSPACE/nishin-403 || true
+          sudo chown -R $USER:$USER $GITHUB_WORKSPACE || true
+          - uses: actions/checkout@v4
 
       - name: Set up environment
         working-directory: ./nishin-403
