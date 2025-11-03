@@ -113,7 +113,7 @@ jobs:
           echo "🧹 Cleaning workspace manually before checkout..."
           sudo rm -rf $GITHUB_WORKSPACE/nishin-403 || true
           sudo chown -R $USER:$USER $GITHUB_WORKSPACE || true
-          
+
       - uses: actions/checkout@v4
 
       - name: Set up environment
@@ -137,9 +137,6 @@ jobs:
       - name: Build & deploy Docker containers
         working-directory: ./nishin-403
         run: |
-          echo "🚀 User"
-          export LOCAL_UID=$(id -u)
-          export LOCAL_GID=$(id -g)
           echo "🚀 Building and deploying Docker containers..."
           docker compose -f docker-compose.prod.yml up -d --build
 
