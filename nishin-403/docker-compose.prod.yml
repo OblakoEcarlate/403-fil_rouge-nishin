@@ -53,9 +53,8 @@ services:
         command: mongod --auth
         restart: unless-stopped
         healthcheck:
-            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27022/test -u ${DB_USERNAME:-root} -p ${DB_PASSWORD:-root} --authenticationDatabase admin --quiet
+            test: ["CMD", "mongosh", "--eval", "db.adminCommand({ ping: 1 })"]
             interval: 10s
             timeout: 10s
             retries: 5
           
-# j'ai oublié de delete les fichiers j'ai pas les droits, je retente
