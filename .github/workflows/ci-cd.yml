@@ -133,8 +133,6 @@ jobs:
         run: |
           echo "🚀 Building and deploying Docker containers..."
           docker compose -f docker-compose.prod.yml up -d --build
-          echo "✅ Docker containers are up and running:"
-          docker ps
 
       - name: Run seeds
         working-directory: ./nishin-403

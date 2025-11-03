@@ -12,7 +12,6 @@ services:
         ports:
             - "8022:8022"
         volumes:
-            - .:/var/www/html
             - composer-cache:/tmp
         environment:
             APP_ENV: ${APP_ENV:-local}
