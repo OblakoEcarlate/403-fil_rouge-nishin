@@ -26,7 +26,6 @@ services:
         depends_on:
             - mongo
         restart: unless-stopped
-        user: "1000:1000"
         command: >
             sh -c "
             chmod -R 775 storage bootstrap &&
