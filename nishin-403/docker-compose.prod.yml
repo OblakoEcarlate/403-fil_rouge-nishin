@@ -43,7 +43,7 @@ services:
         image: mongo:7
         container_name: mongo-db
         ports:
-            - "27018:27018"
+            - "27022:27017"
         environment:
             MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME:-root}
             MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD:-example}
@@ -53,7 +53,7 @@ services:
         command: mongod --auth
         restart: unless-stopped
         healthcheck:
-            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27018/test -u ${DB_USERNAME:-root} -p ${DB_PASSWORD:-root} --authenticationDatabase admin --quiet
+            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27022/test -u ${DB_USERNAME:-root} -p ${DB_PASSWORD:-root} --authenticationDatabase admin --quiet
             interval: 10s
             timeout: 10s
             retries: 5
