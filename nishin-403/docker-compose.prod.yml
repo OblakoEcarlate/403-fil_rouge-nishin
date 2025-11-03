@@ -26,7 +26,7 @@ services:
         depends_on:
             - mongo
         restart: unless-stopped
-        user: "root"
+        user: "${UID}:${GID}"
         command: >
             sh -c "
             chown -R www-data:www-data storage bootstrap &&
