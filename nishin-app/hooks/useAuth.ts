@@ -3,6 +3,8 @@ import { useRouter, useSegments } from 'expo-router';
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { resetDatabase } from '../services/database';
+
 const API_BASE_URL = Constants.expoConfig.extra.API_BASE_URL;
 const API_KEY = Constants.expoConfig.extra.API_KEY;
     
@@ -23,6 +25,9 @@ export function useAuth() {
             });
 
             await AsyncStorage.removeItem('userToken');
+
+            await resetDatabase();
+
             router.replace('/(auth)/auth');
         } catch (error) {
             console.error('❌ Erreur déconnexion:', error);

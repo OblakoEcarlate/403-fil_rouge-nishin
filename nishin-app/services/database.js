@@ -41,3 +41,14 @@ export async function setupDatabase() {
 
   console.log('Local database initialized.');
 }
+
+export const resetDatabase = async () => {
+  const db = await getDatabase();
+
+  await db.runAsync("DROP TABLE IF EXISTS teams_local");
+  await db.runAsync("DROP TABLE IF EXISTS characters_local");
+  await db.runAsync("DROP TABLE IF EXISTS sync_meta");
+  
+  console.log('🧹 Local database reset.');
+  await setupDatabase();
+};

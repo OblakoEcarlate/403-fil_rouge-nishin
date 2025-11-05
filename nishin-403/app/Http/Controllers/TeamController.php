@@ -137,7 +137,8 @@ class TeamController extends Controller
      */
     public function getTeam(Request $request)
     {
-        $user = $request->user();
+        // $user = $request->user();
+        $user = auth()->user();
 
         $team = Team::where('user_id', $user->id)->first();
 
